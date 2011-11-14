@@ -68,7 +68,8 @@ class DisplayStories(webapp.RequestHandler):
                                 PT Project ID:
                                     <select name=app_id>
                                         <optgroup label="Socialize">
-                                            <option value="294005">Web/API</option>
+                                            <option value="294005">API</option>
+                                            <option value="352393">GS.Com Web</option>
                                             <option value="293827">iOS SDK</option>
                                             <option value="293829">Android SDK</option>
                                         </optgroup>                                        
