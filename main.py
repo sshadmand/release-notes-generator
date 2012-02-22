@@ -59,6 +59,8 @@ class DisplayStories(webapp.RequestHandler):
         
         label = str(self.request.get("label"))
         app_id = str(self.request.get("app_id"))
+        show_all = self.request.get("show_all")
+        show_all_checkbox = "checked" if show_all else ""
         if not label:
             label = "v0."
         self.response.out.write("""
@@ -82,11 +84,12 @@ class DisplayStories(webapp.RequestHandler):
                                         </optgroup>
                                     </select>
                                 Release Label: <input type=text name=label value="%s">
+                                <input type="checkbox" name="show_all" %s> Show All &nbsp;&nbsp;&nbsp;
                                 <input type=submit>
                                 </form>
                                 </body>
                                 </html>
-                            """ % label)
+                            """ % (label, show_all_checkbox) )
         
         if app_id:
             uri = "/services/v3/projects/" + app_id + "/stories?filter=label%3A" + label + "%20includedone:true"
@@ -117,11 +120,11 @@ class DisplayStories(webapp.RequestHandler):
                       ready_for_release = False
                       if story_type == "release":
                           released_to_prod = False
-                      
-                  if not story_type in ["release", "chore"] and not "private" in labels:
+
+                  labels = story.getElementsByTagName("labels")[0].childNodes[0].data
+                  if show_all or (not story_type in ["release", "chore"] and not "private" in labels):
                     name = story.getElementsByTagName("name")[0].childNodes[0].data
-                    url = story.getElementsByTagName("url")[0].childNodes[0].data
-                    labels = story.getElementsByTagName("labels")[0].childNodes[0].data
+                    url = story.getElementsByTagName("url")[0].childNodes[0].data                    
                     labels = labels.replace(",", " ").replace(label, "")
                     html = html + "<li><p>[%s] <a href='%s'>%s</a> [ %s]<p></li>" % ( story_type, url, name, labels)
                 
