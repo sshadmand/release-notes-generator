@@ -108,6 +108,7 @@ class DisplayStories(webapp.RequestHandler):
             released_to_prod = True
             
             if story_count > 0:
+                html = html + "<ol>"
                 for story in stories:
                   story_type = story.getElementsByTagName("story_type")[0].childNodes[0].data
                   current_state = story.getElementsByTagName("current_state")[0].childNodes[0].data  
@@ -117,12 +118,14 @@ class DisplayStories(webapp.RequestHandler):
                       if story_type == "release":
                           released_to_prod = False
                       
-                  if not story_type in ["release", "chore"]:
+                  if not story_type in ["release", "chore"] and not "private" in labels:
                     name = story.getElementsByTagName("name")[0].childNodes[0].data
                     url = story.getElementsByTagName("url")[0].childNodes[0].data
                     labels = story.getElementsByTagName("labels")[0].childNodes[0].data
                     labels = labels.replace(",", " ").replace(label, "")
-                    html = html + "<p>[%s] <a href='%s'>%s</a> [ %s]<p>" % ( story_type, url, name, labels)
+                    html = html + "<li><p>[%s] <a href='%s'>%s</a> [ %s]<p></li>" % ( story_type, url, name, labels)
+                
+                html = html + "</ol>"
                 
                 if not ready_for_release:
                     release_status = "<h3 style='color:#900;'>Easy, tiger! This release is not ready for production yet...but it's in the cards.</h3>"
