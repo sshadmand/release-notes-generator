@@ -63,6 +63,26 @@ class DisplayStories(webapp.RequestHandler):
         show_all_checkbox = "checked" if show_all else ""
         if not label:
             label = "v0."
+            
+        socialize_opts = ""
+        socialize_opts =  socialize_opts + """<option value="294005" %s >API</option>""" % ("selected" if app_id == "294005" else "")
+        socialize_opts =  socialize_opts + """<option value="352393" %s>GS.Com Web</option>""" % ("selected" if app_id == "352393" else "")
+        socialize_opts =  socialize_opts + """<option value="293827" %s>iOS SDK</option>""" % ("selected" if app_id == "293827" else "")
+        socialize_opts =  socialize_opts + """<option value="293829" %s>Android SDK</option>""" % ("selected" if app_id == "293829" else "")
+                
+        appmakr_opts = ""
+        appmakr_opts =  appmakr_opts + """<option value="293825" %s>Android</option>""" % ("selected" if app_id == "293825" else "")
+        appmakr_opts =  appmakr_opts + """<option value="293815" %s>iPhone</option>""" % ("selected" if app_id == "293815" else "")
+        appmakr_opts =  appmakr_opts + """<option value="293831" %s>Qt</option>""" % ("selected" if app_id == "293831" else "")
+        appmakr_opts =  appmakr_opts + """<option value="302467" %s>Web</option>""" % ("selected" if app_id == "302467" else "")
+        appmakr_opts =  appmakr_opts + """<option value="293821" %s>Windows</option>""" % ("selected" if app_id == "293821" else "")
+        
+        
+        
+        
+        
+
+            
         self.response.out.write("""
                                 <html>
                                 <body>
@@ -70,17 +90,10 @@ class DisplayStories(webapp.RequestHandler):
                                 PT Project ID:
                                     <select name=app_id>
                                         <optgroup label="Socialize">
-                                            <option value="294005">API</option>
-                                            <option value="352393">GS.Com Web</option>
-                                            <option value="293827">iOS SDK</option>
-                                            <option value="293829">Android SDK</option>
+                                            %s
                                         </optgroup>                                        
                                         <optgroup label="AppMakr">
-                                            <option value="293825">Android</option>
-                                            <option value="293815">iPhone</option>
-                                            <option value="293831">Qt</option>
-                                            <option value="302467">Web</option>
-                                            <option value="293821">Windows</option>                                            
+                                            %s                                           
                                         </optgroup>
                                     </select>
                                 Release Label: <input type=text name=label value="%s">
@@ -88,8 +101,8 @@ class DisplayStories(webapp.RequestHandler):
                                 <input type=submit>
                                 </form>
                                 </body>
-                                </html>
-                            """ % (label, show_all_checkbox) )
+                                </html> 
+                            """ % (socialize_opts, appmakr_opts, label, show_all_checkbox) )
         
         if app_id:
             uri = "/services/v3/projects/" + app_id + "/stories?filter=label%3A" + label + "%20includedone:true"
@@ -111,7 +124,7 @@ class DisplayStories(webapp.RequestHandler):
             released_to_prod = True
             
             if story_count > 0:
-                html = html + "<ol>"
+                html = html + "<ol id='copytext'>"
                 for story in stories:
                   story_type = story.getElementsByTagName("story_type")[0].childNodes[0].data
                   current_state = story.getElementsByTagName("current_state")[0].childNodes[0].data  
@@ -130,6 +143,18 @@ class DisplayStories(webapp.RequestHandler):
                 
                 html = html + "</ol>"
                 
+                
+                if not show_all:
+                    html = html + """
+                        <style>p.post a {font-size: 22px;text-decoration: none;}</style>
+                        <h2>Ready to release?</a>
+                        <p class="post">1. <a href="http://twitter.com/SocializeStatus" target="_blank">Announce release to SocializeStatus &raquo;</a></p>
+                        <p class="post">2. <a href="http://support.getsocialize.com/socialize/topics/socialize_release_updates_published_on_this_thread#bottom" target="_blank">Publish release notes to GetSatisfaction &raquo;</a></p>
+                    """
+                else:
+                    html = html + """<p>** <a href="?app_id=%s&label=%s">Uncheck "show all" to post release notes</a></p>""" % (app_id, label)
+                
+                
                 if not ready_for_release:
                     release_status = "<h3 style='color:#900;'>Easy, tiger! This release is not ready for production yet...but it's in the cards.</h3>"
                 elif released_to_prod:
@@ -137,7 +162,7 @@ class DisplayStories(webapp.RequestHandler):
                 else:
                     release_status = "<h3>Hmm...I see a release to prod in your future</h3>"
 
-
+            
             html = release_status + html
             self.response.out.write(html)
         
