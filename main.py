@@ -165,14 +165,21 @@ class DisplayStories(webapp.RequestHandler):
                         release_name_slug = _slugify(apps[app_id] + " " + label)
                         bookmark = """<a name="%s"></a><br><br>""" % release_name_slug
                         release_notes_plain = bookmark + release_name + "<br><br>" + release_notes_plain
+                        download = ""
                         if app_id == "293827" or app_id == "293829":
                             release_notes_plain = release_notes_plain + "<br><br>Download the latest SDK at http://www.getsocialize.com/sdk"
+                            download = " get it at: https://github.com/socialize/socialize-sdk-android/downloads"
+                            if app_id == "293827":
+                                download = " get it at: https://github.com/socialize/socialize-sdk-ios/downloads"
+                            
+                            
                         cleaned = release_notes_plain.strip().replace('"', "").encode("utf-8", 'replace')
                         cleaned = ''.join(cleaned.split("\n"))
                         response = send_getsat_post(cleaned) #, topic_id=3951187)
                         
                         topic_url = "http://support.getsocialize.com/socialize/topics/socialize_release_updates_published_on_this_thread#%s" % release_name_slug
-                        send_tweet("Released %s. check out %s" % (release_name, topic_url))
+                        
+                        send_tweet("Released %s. check out %s %s" % (release_name, topic_url, download))
                         
                         
                         html = "Posted release to GetSat and Twitter" + html
