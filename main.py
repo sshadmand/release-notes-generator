@@ -53,22 +53,26 @@ from google.appengine.ext.webapp import util
 import httplib, urllib
 import xml.dom.minidom
 import settings
-    
+import base64
+import re    
+
 class DisplayStories(webapp.RequestHandler):
     def get(self):
         
         label = str(self.request.get("label"))
+        post_release = self.request.get("post_release")
         app_id = str(self.request.get("app_id"))
         show_all = self.request.get("show_all")
         show_all_checkbox = "checked" if show_all else ""
         if not label:
             label = "v0."
-            
+        
+        apps = {"294005":"API", "352393":"GS.Com Web", "293827":"iOS SDK", "293829":"Android SDK" }
         socialize_opts = ""
         socialize_opts =  socialize_opts + """<option value="294005" %s >API</option>""" % ("selected" if app_id == "294005" else "")
         socialize_opts =  socialize_opts + """<option value="352393" %s>GS.Com Web</option>""" % ("selected" if app_id == "352393" else "")
         socialize_opts =  socialize_opts + """<option value="293827" %s>iOS SDK</option>""" % ("selected" if app_id == "293827" else "")
-        socialize_opts =  socialize_opts + """<option value="293829" %s>Android SDK</option>""" % ("selected" if app_id == "293829" else "")
+        socialize_opts =  socialize_opts + """<option value="293829" %s>Android</option>""" % ("selected" if app_id == "293829" else "")
                 
         appmakr_opts = ""
         appmakr_opts =  appmakr_opts + """<option value="293825" %s>Android</option>""" % ("selected" if app_id == "293825" else "")
@@ -123,8 +127,10 @@ class DisplayStories(webapp.RequestHandler):
             ready_for_release = True
             released_to_prod = True
             
+            release_notes = ""
+            release_notes_plain = ""
             if story_count > 0:
-                html = html + "<ol id='copytext'>"
+                release_notes = release_notes + "<ol id='copytext'>"
                 for story in stories:
                   story_type = story.getElementsByTagName("story_type")[0].childNodes[0].data
                   current_state = story.getElementsByTagName("current_state")[0].childNodes[0].data  
@@ -139,9 +145,11 @@ class DisplayStories(webapp.RequestHandler):
                     name = story.getElementsByTagName("name")[0].childNodes[0].data
                     url = story.getElementsByTagName("url")[0].childNodes[0].data                    
                     labels = labels.replace(",", " ").replace(label, "")
-                    html = html + "<li><p>[%s] <a href='%s'>%s</a> [ %s]<p></li>" % ( story_type, url, name, labels)
-                
-                html = html + "</ol>"
+                    release_notes = release_notes + "<li><p>[%s] <a href='%s'>%s</a> [ %s]<p></li>" % ( story_type, url, name, labels)
+                    release_notes_plain = release_notes_plain + "<p> [%s] %s [ %s]</p>" % ( story_type, name, labels)
+                    
+                release_notes = release_notes + "</ol>"
+                html = html + release_notes
                 
                 
                 if not show_all:
@@ -150,7 +158,24 @@ class DisplayStories(webapp.RequestHandler):
                         <h2>Ready to release?</a>
                         <p class="post">1. <a href="http://twitter.com/SocializeStatus" target="_blank">Announce release to SocializeStatus &raquo;</a></p>
                         <p class="post">2. <a href="http://support.getsocialize.com/socialize/topics/socialize_release_updates_published_on_this_thread#bottom" target="_blank">Publish release notes to GetSatisfaction &raquo;</a></p>
-                    """
+                        <p class="post"><a href="?post_release=true&app_id=%s&label=%s">Or, simply click here to post the features above to Twitter and GetSat</a></p>
+                    """ % (app_id, label)
+                    if post_release:
+                        release_name = apps[app_id] + " " + label
+                        release_name_slug = _slugify(apps[app_id] + " " + label)
+                        bookmark = """<a name="%s"></a><br><br>""" % release_name_slug
+                        release_notes_plain = bookmark + release_name + "<br><br>" + release_notes_plain
+                        if app_id == "293827" or app_id == "293829":
+                            release_notes_plain = release_notes_plain + "<br><br>Download the latest SDK at http://www.getsocialize.com/sdk"
+                        cleaned = release_notes_plain.strip().replace('"', "").encode("utf-8", 'replace')
+                        cleaned = ''.join(cleaned.split("\n"))
+                        response = send_getsat_post(cleaned) #, topic_id=3951187)
+                        
+                        topic_url = "http://support.getsocialize.com/socialize/topics/socialize_release_updates_published_on_this_thread#%s" % release_name_slug
+                        send_tweet("Released %s. check out %s" % (release_name, topic_url))
+                        
+                        
+                        html = "Posted release to GetSat and Twitter" + html
                 else:
                     html = html + """<p>** <a href="?app_id=%s&label=%s">Uncheck "show all" to post release notes</a></p>""" % (app_id, label)
                 
@@ -165,8 +190,50 @@ class DisplayStories(webapp.RequestHandler):
             
             html = release_status + html
             self.response.out.write(html)
-        
 
+_slugify_strip_re = re.compile(r'[^\w\s-]')
+_slugify_hyphenate_re = re.compile(r'[-\s]+')
+def _slugify(value):
+    """
+    Normalizes string, converts to lowercase, removes non-alpha characters,
+    and converts spaces to hyphens.
+
+    From Django's "django/template/defaultfilters.py".
+    """
+    import unicodedata
+    if not isinstance(value, unicode):
+        value = unicode(value)
+    value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore')
+    value = unicode(_slugify_strip_re.sub('', value).strip().lower())
+    return _slugify_hyphenate_re.sub('-', value)    
+    
+def send_tweet(status):
+    import tweepy
+    consumer_key=settings.TWITTER_CONSUMER_KEY
+    consumer_secret=settings.TWITTER_CONSUMER_SECRET
+    access_token=settings.TWITTER_ACCESS_TOKEN
+    access_token_secret=settings.TWITTER_ACCESS_TOKEN_SECRET
+    auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
+    auth.set_access_token(access_token, access_token_secret)
+    api = tweepy.API(auth)
+    api.update_status(status)
+
+def send_getsat_post(content, topic_id=2700076):
+    username = settings.GETSAT_USERNAME
+    password = settings.GETSAT_PASSWORD
+    
+    credentials = base64.b64encode("{0}:{1}".format(username, password).encode()).decode("ascii")
+    headers = {'Authorization': "Basic " + credentials, "Content-type": "application/json"}
+
+    data = """{"reply": { "content" :"%s"}}""" % content
+
+    conn = httplib.HTTPConnection("api.getsatisfaction.com")
+    conn.request("POST", "/topics/%s/replies" % topic_id, data, headers)
+    response = conn.getresponse()
+
+    data = response.read()
+    conn.close()
+    return data
 
 def main():
     application = webapp.WSGIApplication([
