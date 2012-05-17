@@ -172,13 +172,21 @@ class DisplayStories(webapp.RequestHandler):
                             if app_id == "293827":
                                 download = " get it at: https://github.com/socialize/socialize-sdk-ios/downloads"
                             
+                        
                             
                         cleaned = release_notes_plain.strip().replace('"', "").encode("utf-8", 'replace')
                         cleaned = ''.join(cleaned.split("\n"))
-                        response = send_getsat_post(cleaned) #, topic_id=3951187)
                         
+                        print "created get stat post..."
+                        print cleaned
+                        
+                        print "Posting to get stats"
+                        response = send_getsat_post(cleaned) #, topic_id=3951187)
+                        print response
+                                                
                         topic_url = "http://support.getsocialize.com/socialize/topics/socialize_release_updates_published_on_this_thread#%s" % release_name_slug
                         
+                        print "Posting to twitter"
                         send_tweet("Released %s. check out %s %s" % (release_name, topic_url, download))
                         
                         
@@ -229,7 +237,9 @@ def send_getsat_post(content, topic_id=2700076):
     username = settings.GETSAT_USERNAME
     password = settings.GETSAT_PASSWORD
     
-    credentials = base64.b64encode("{0}:{1}".format(username, password).encode()).decode("ascii")
+    credentials = "%s:%s" % (username, password)
+    credentials = base64.b64encode( credentials.encode() )
+    credentials = credentials.decode("ascii")
     headers = {'Authorization': "Basic " + credentials, "Content-type": "application/json"}
 
     data = """{"reply": { "content" :"%s"}}""" % content
