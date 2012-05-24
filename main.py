@@ -56,9 +56,42 @@ import settings
 import base64
 import re    
 
-class DisplayStories(webapp.RequestHandler):
+class PublishRelease(webapp.RequestHandler):
     def get(self):
-        
+        pass
+
+    def post(self):
+        get_sat_post = self.request.get("get_sat_post")       
+        tweet = self.request.get("tweet")       
+        response = send_getsat_post(get_sat_post) #, topic_id=3951187)
+        send_tweet(tweet)
+
+
+
+def clean_text(text):
+    cleaned = text.strip().replace('"', "").encode("utf-8", 'replace')
+    cleaned = ''.join(cleaned.split("\n"))
+    return cleaned 
+
+def get_project_options(app_id):
+    socialize_opts = ""
+    socialize_opts =  socialize_opts + """<option value="294005" %s >API</option>""" % ("selected" if app_id == "294005" else "")
+    socialize_opts =  socialize_opts + """<option value="352393" %s>GS.Com Web</option>""" % ("selected" if app_id == "352393" else "")
+    socialize_opts =  socialize_opts + """<option value="293827" %s>iOS SDK</option>""" % ("selected" if app_id == "293827" else "")
+    socialize_opts =  socialize_opts + """<option value="293829" %s>Android</option>""" % ("selected" if app_id == "293829" else "")
+
+    appmakr_opts = ""
+    appmakr_opts =  appmakr_opts + """<option value="293825" %s>Android</option>""" % ("selected" if app_id == "293825" else "")
+    appmakr_opts =  appmakr_opts + """<option value="293815" %s>iPhone</option>""" % ("selected" if app_id == "293815" else "")
+    appmakr_opts =  appmakr_opts + """<option value="293831" %s>Qt</option>""" % ("selected" if app_id == "293831" else "")
+    appmakr_opts =  appmakr_opts + """<option value="302467" %s>Web</option>""" % ("selected" if app_id == "302467" else "")
+    appmakr_opts =  appmakr_opts + """<option value="293821" %s>Windows</option>""" % ("selected" if app_id == "293821" else "")
+    return socialize_opts, appmakr_opts 
+    
+
+class DisplayStories(webapp.RequestHandler):
+
+    def get(self):
         label = str(self.request.get("label"))
         post_release = self.request.get("post_release")
         app_id = str(self.request.get("app_id"))
@@ -68,30 +101,14 @@ class DisplayStories(webapp.RequestHandler):
             label = "v0."
         
         apps = {"294005":"API", "352393":"GS.Com Web", "293827":"iOS SDK", "293829":"Android SDK" }
-        socialize_opts = ""
-        socialize_opts =  socialize_opts + """<option value="294005" %s >API</option>""" % ("selected" if app_id == "294005" else "")
-        socialize_opts =  socialize_opts + """<option value="352393" %s>GS.Com Web</option>""" % ("selected" if app_id == "352393" else "")
-        socialize_opts =  socialize_opts + """<option value="293827" %s>iOS SDK</option>""" % ("selected" if app_id == "293827" else "")
-        socialize_opts =  socialize_opts + """<option value="293829" %s>Android</option>""" % ("selected" if app_id == "293829" else "")
-                
-        appmakr_opts = ""
-        appmakr_opts =  appmakr_opts + """<option value="293825" %s>Android</option>""" % ("selected" if app_id == "293825" else "")
-        appmakr_opts =  appmakr_opts + """<option value="293815" %s>iPhone</option>""" % ("selected" if app_id == "293815" else "")
-        appmakr_opts =  appmakr_opts + """<option value="293831" %s>Qt</option>""" % ("selected" if app_id == "293831" else "")
-        appmakr_opts =  appmakr_opts + """<option value="302467" %s>Web</option>""" % ("selected" if app_id == "302467" else "")
-        appmakr_opts =  appmakr_opts + """<option value="293821" %s>Windows</option>""" % ("selected" if app_id == "293821" else "")
-        
-        
-        
-        
-        
 
-            
+        socialize_opts, appmakr_opts = get_project_options(app_id)
+
         self.response.out.write("""
                                 <html>
-                                <body>
+                                <body onLoad="document.forms[0].label.focus()">
                                 <form method="GET" action="">
-                                PT Project ID:
+                                 PT Project ID:
                                     <select name=app_id>
                                         <optgroup label="Socialize">
                                             %s
@@ -100,10 +117,10 @@ class DisplayStories(webapp.RequestHandler):
                                             %s                                           
                                         </optgroup>
                                     </select>
-                                Release Label: <input type=text name=label value="%s">
-                                <input type="checkbox" name="show_all" %s> Show All &nbsp;&nbsp;&nbsp;
-                                <input type=submit>
-                                </form>
+                                 Release Label: <input type=text name=label value="%s" tabindex=0>
+                                 <input type="checkbox" name="show_all" id="show_all_checkbox"  %s> <label for="show_all_checkbox">Show All &nbsp;&nbsp;&nbsp;</label>
+                                 <input type=submit>
+                                 </form>
                                 </body>
                                 </html> 
                             """ % (socialize_opts, appmakr_opts, label, show_all_checkbox) )
@@ -153,45 +170,38 @@ class DisplayStories(webapp.RequestHandler):
                 
                 
                 if not show_all:
+                    release_name = apps[app_id] + " " + label
+                    release_name_slug = _slugify(apps[app_id] + " " + label)
+                    bookmark = """<a name="%s"></a><br><br>""" % release_name_slug
+                    release_notes_plain = bookmark + release_name + "<br><br>" + release_notes_plain
+                    download = ""
+                    if app_id == "293827" or app_id == "293829":
+                        release_notes_plain = release_notes_plain + "<br><br>Download the latest SDK at http://www.getsocialize.com/sdk"
+                        download = " get it at: https://github.com/socialize/socialize-sdk-android/downloads"
+                        if app_id == "293827":
+                            download = " get it at: https://github.com/socialize/socialize-sdk-ios/downloads"
+
+                    get_sat_post = clean_text(release_notes_plain)
+                    topic_url = "http://support.getsocialize.com/socialize/topics/socialize_release_updates_published_on_this_thread#%s" % release_name_slug
+                    tweet = "Released %s! More details at: %s %s" % (release_name, topic_url, download)
+
+
                     html = html + """
-                        <style>p.post a {font-size: 22px;text-decoration: none;}</style>
-                        <h2>Ready to release?</a>
-                        <p class="post">1. <a href="http://twitter.com/SocializeStatus" target="_blank">Announce release to SocializeStatus &raquo;</a></p>
-                        <p class="post">2. <a href="http://support.getsocialize.com/socialize/topics/socialize_release_updates_published_on_this_thread#bottom" target="_blank">Publish release notes to GetSatisfaction &raquo;</a></p>
-                        <p class="post"><a href="?post_release=true&app_id=%s&label=%s">Or, simply click here to post the features above to Twitter and GetSat</a></p>
-                    """ % (app_id, label)
-                    if post_release:
-                        release_name = apps[app_id] + " " + label
-                        release_name_slug = _slugify(apps[app_id] + " " + label)
-                        bookmark = """<a name="%s"></a><br><br>""" % release_name_slug
-                        release_notes_plain = bookmark + release_name + "<br><br>" + release_notes_plain
-                        download = ""
-                        if app_id == "293827" or app_id == "293829":
-                            release_notes_plain = release_notes_plain + "<br><br>Download the latest SDK at http://www.getsocialize.com/sdk"
-                            download = " get it at: https://github.com/socialize/socialize-sdk-android/downloads"
-                            if app_id == "293827":
-                                download = " get it at: https://github.com/socialize/socialize-sdk-ios/downloads"
-                            
-                        
-                            
-                        cleaned = release_notes_plain.strip().replace('"', "").encode("utf-8", 'replace')
-                        cleaned = ''.join(cleaned.split("\n"))
-                        
-                        print "created get stat post..."
-                        print cleaned
-                        
-                        print "Posting to get stats"
-                        response = send_getsat_post(cleaned) #, topic_id=3951187)
-                        print response
-                                                
-                        topic_url = "http://support.getsocialize.com/socialize/topics/socialize_release_updates_published_on_this_thread#%s" % release_name_slug
-                        
-                        print "Posting to twitter"
-                        send_tweet("Released %s. check out %s %s" % (release_name, topic_url, download))
-                        
-                        
-                        html = "Posted release to GetSat and Twitter" + html
-                else:
+                        <style>p.post a {font-size: 20px;text-decoration: none;}textarea {width:500px;height:100px;}p.norm {font-size:14px;} </style>
+                        <h3>Ready to publish this release to the boards?</h3>
+                        """
+
+                    release_form = ""
+                    release_form = release_form + """ <form method="POST" action"/publish_release" > """
+                    release_form = release_form + """ <input type="hidden" name="app_id" value="%s" /><input type="hidden" name="label" value="%s" /> """ % (app_id, label)
+                    release_form = release_form + """ <p class="norm">GetSat Post</p><textarea name="get_sat_post">%s</textarea>""" % get_sat_post
+                    release_form = release_form + """ <p class="norm">Twitter Post</p><textarea name="tweet_post">%s</textarea> """ % tweet
+                    release_form = release_form + """ <p class="norm"> <input type="submit" value="Post release to Twitter and GetSat" /></p> """
+                    release_form = release_form + """ </form> """
+
+                    html = html + release_form
+
+                else: #NOT SHOW ALL
                     html = html + """<p>** <a href="?app_id=%s&label=%s">Uncheck "show all" to post release notes</a></p>""" % (app_id, label)
                 
                 
@@ -252,9 +262,14 @@ def send_getsat_post(content, topic_id=2700076):
     conn.close()
     return data
 
+def create_release_todo(text, app_id):
+   pass
+    
+
 def main():
     application = webapp.WSGIApplication([
                                         ('/', DisplayStories),
+                                        ('/publish_release', PublishRelease),
                                             ],
                                          debug=True)
     util.run_wsgi_app(application)
