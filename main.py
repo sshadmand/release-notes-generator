@@ -62,11 +62,16 @@ class PublishRelease(webapp.RequestHandler):
 
     def post(self):
         get_sat_post = self.request.get("get_sat_post")       
-        tweet = self.request.get("tweet")       
-        response = send_getsat_post(get_sat_post) #, topic_id=3951187)
-        send_tweet(tweet)
-
-
+        tweet = self.request.get("tweet_post")       
+        getsat_response = send_getsat_post(get_sat_post) #, topic_id=3951187)
+        tweet_response = send_tweet(tweet)
+        self.response.out.write("<html><body>")
+        self.response.out.write("<p>Messages published:</p>")
+        self.response.out.write("<p>Twitter:</p>")
+        self.response.out.write(tweet_response)
+        self.response.out.write("<p>Get Sat:</p>")
+        self.response.out.write(getsat_response)
+        self.response.out.write("</body></html>")
 
 def clean_text(text):
     cleaned = text.strip().replace('"', "").encode("utf-8", 'replace')
@@ -192,7 +197,7 @@ class DisplayStories(webapp.RequestHandler):
                         """
 
                     release_form = ""
-                    release_form = release_form + """ <form method="POST" action"/publish_release" > """
+                    release_form = release_form + """ <form method="POST" action="/publish_release" > """
                     release_form = release_form + """ <input type="hidden" name="app_id" value="%s" /><input type="hidden" name="label" value="%s" /> """ % (app_id, label)
                     release_form = release_form + """ <p class="norm">GetSat Post</p><textarea name="get_sat_post">%s</textarea>""" % get_sat_post
                     release_form = release_form + """ <p class="norm">Twitter Post</p><textarea name="tweet_post">%s</textarea> """ % tweet
@@ -241,7 +246,7 @@ def send_tweet(status):
     auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
     auth.set_access_token(access_token, access_token_secret)
     api = tweepy.API(auth)
-    api.update_status(status)
+    return api.update_status(status)
 
 def send_getsat_post(content, topic_id=2700076):
     username = settings.GETSAT_USERNAME
@@ -262,7 +267,7 @@ def send_getsat_post(content, topic_id=2700076):
     conn.close()
     return data
 
-def create_release_todo(text, app_id):
+def create_release_todo_bc(text, app_id):
    pass
     
 
