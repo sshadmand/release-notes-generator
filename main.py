@@ -54,7 +54,8 @@ import httplib, urllib
 import xml.dom.minidom
 import settings
 import base64
-import re    
+import re
+import simplejson
 
 class PublishRelease(webapp.RequestHandler):
     def get(self):
@@ -73,6 +74,19 @@ class PublishRelease(webapp.RequestHandler):
         self.response.out.write(getsat_response)
         self.response.out.write("</body></html>")
 
+class CreateRelease(webapp.RequestHandler):
+    def get(self):
+        pass
+
+    def post(self):
+        bc_post = self.request.get("bc_post")
+        label = str(self.request.get("label")) 
+        bc_reponse = create_release_todo_bc(label, bc_post)
+        self.response.out.write("<html><body>")
+        self.response.out.write("<p>Todo list created:</p>")
+        self.response.out.write("<p>BC:</p>")
+        self.response.out.write(bc_reponse)
+        
 def clean_text(text):
     cleaned = text.strip().replace('"', "").encode("utf-8", 'replace')
     cleaned = ''.join(cleaned.split("\n"))
@@ -145,7 +159,7 @@ class DisplayStories(webapp.RequestHandler):
             story_count = int(dom.getElementsByTagName("stories")[0].getAttribute("count"))
             
             html = ""
-            release_status = "Sorry, no date for that search..."
+            release_status = "Sorry, no data for that search..."
             ready_for_release = True
             released_to_prod = True
             
@@ -173,7 +187,10 @@ class DisplayStories(webapp.RequestHandler):
                 release_notes = release_notes + "</ol>"
                 html = html + release_notes
                 
-                
+                html = html + """
+                    <style>p.post a {font-size: 20px;text-decoration: none;}textarea {width:500px;height:100px;}p.norm {font-size:14px;} </style>
+                    """
+                    
                 if not show_all:
                     release_name = apps[app_id] + " " + label
                     release_name_slug = _slugify(apps[app_id] + " " + label)
@@ -192,7 +209,6 @@ class DisplayStories(webapp.RequestHandler):
 
 
                     html = html + """
-                        <style>p.post a {font-size: 20px;text-decoration: none;}textarea {width:500px;height:100px;}p.norm {font-size:14px;} </style>
                         <h3>Ready to publish this release to the boards?</h3>
                         """
 
@@ -207,9 +223,16 @@ class DisplayStories(webapp.RequestHandler):
                     html = html + release_form
 
                 else: #NOT SHOW ALL
+                    bc_post_text = "See release info at: http://releasenotesgenerator.appspot.com?app_id=%s&label=%s&show_all=on" % (app_id, label)
                     html = html + """<p>** <a href="?app_id=%s&label=%s">Uncheck "show all" to post release notes</a></p>""" % (app_id, label)
-                
-                
+                    create_release_form = ""
+                    create_release_form = create_release_form + """ <form method="POST" action="/create_release" > """
+                    create_release_form = create_release_form + """ <input type="hidden" name="app_id" value="%s" /><input type="hidden" name="label" value="%s" /> """ % (app_id, label)
+                    create_release_form = create_release_form + """ <p class="norm">BC Post Post</p><textarea name="bc_post">%s</textarea> """ % bc_post_text
+                    create_release_form = create_release_form + """ <p class="norm"> <input type="submit" value="Create release in basecamp" /></p> """
+                    create_release_form = create_release_form + """ </form> """
+                    html = html + create_release_form
+                    
                 if not ready_for_release:
                     release_status = "<h3 style='color:#900;'>Easy, tiger! This release is not ready for production yet...but it's in the cards.</h3>"
                 elif released_to_prod:
@@ -267,14 +290,44 @@ def send_getsat_post(content, topic_id=2700076):
     conn.close()
     return data
 
-def create_release_todo_bc(text, app_id):
-   pass
+def create_release_todo_bc(label, text="no comment sent...."):
+   #curl -u sshadmand:cali4na1 -H 'Content-Type: application/json' -H 'User-Agent: MyApp (yourname@example.com)'  -d '{ "content": "My new project!" }'  https://basecamp.com/1763443/api/v1/projects/86142/todolists/367744/todos.json
+   username = settings.BASECAMP_USERNAME
+   password = settings.BASECAMP_PASSWORD
+   
+   
+   
+   uri = "/1763443/api/v1/projects/86142/todolists/367744/todos.json"
+   
+   credentials = "%s:%s" % (username, password)
+   credentials = base64.b64encode( credentials.encode() )
+   credentials = credentials.decode("ascii")
+   headers = {'Authorization': "Basic " + credentials, "Content-type": "application/json"}
+   conn = httplib.HTTPSConnection("basecamp.com")
+      
+   #create todo
+   payload = """{"content": "%s"}""" % label
+   conn.request("POST", uri, payload, headers)
+   response = conn.getresponse()
+   data = response.read()
+   data = simplejson.loads(data)
+
+   #add comment to the todo
+   comment_uri = "/1763443/api/v1/projects/86142/todos/%s/comments.json" % data["id"]
+   payload = """{"content": "%s"}""" % text
+   conn.request("POST", comment_uri, payload, headers)
+   response = conn.getresponse()
+   data = response.read()
+
+   conn.close()
+   return data
     
 
 def main():
     application = webapp.WSGIApplication([
                                         ('/', DisplayStories),
                                         ('/publish_release', PublishRelease),
+                                        ('/create_release', CreateRelease),
                                             ],
                                          debug=True)
     util.run_wsgi_app(application)
