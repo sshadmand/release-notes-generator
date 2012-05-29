@@ -290,14 +290,12 @@ def send_getsat_post(content, topic_id=2700076):
     conn.close()
     return data
 
-def create_release_todo_bc(label, text="no comment sent...."):
+def create_release_todo_bc(label, text="no comment sent....", project="86142", todolist="367744" ):
    #curl -u sshadmand:cali4na1 -H 'Content-Type: application/json' -H 'User-Agent: MyApp (yourname@example.com)'  -d '{ "content": "My new project!" }'  https://basecamp.com/1763443/api/v1/projects/86142/todolists/367744/todos.json
    username = settings.BASECAMP_USERNAME
-   password = settings.BASECAMP_PASSWORD
-   
-   
-   
-   uri = "/1763443/api/v1/projects/86142/todolists/367744/todos.json"
+   password = settings.BASECAMP_PASSWORD 
+  
+   uri = "/1763443/api/v1/projects/%s/todolists/%s/todos.json" % (project, todolist)
    
    credentials = "%s:%s" % (username, password)
    credentials = base64.b64encode( credentials.encode() )
@@ -313,7 +311,7 @@ def create_release_todo_bc(label, text="no comment sent...."):
    data = simplejson.loads(data)
 
    #add comment to the todo
-   comment_uri = "/1763443/api/v1/projects/86142/todos/%s/comments.json" % data["id"]
+   comment_uri = "/1763443/api/v1/projects/%s/todos/%s/comments.json" % (project, data["id"])
    payload = """{"content": "%s"}""" % text
    conn.request("POST", comment_uri, payload, headers)
    response = conn.getresponse()
