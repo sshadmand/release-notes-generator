@@ -80,8 +80,20 @@ class CreateRelease(webapp.RequestHandler):
 
     def post(self):
         bc_post = self.request.get("bc_post")
-        label = str(self.request.get("label")) 
-        bc_reponse = create_release_todo_bc(label, bc_post)
+        label = str(self.request.get("label"))
+        app_id = str(self.request.get("app_id"))
+        
+        project="86142"
+        todolist="367744"
+        if app_id == "294005": #api
+            project = "79066"
+            todolist = "539081"
+        # elif app_id == "293827": #ios
+        #     
+        # elif app_id == "293829": #android
+        #     pass
+        
+        bc_reponse = create_release_todo_bc(label, bc_post, project, todolist)
         self.response.out.write("<html><body>")
         self.response.out.write("<p>Todo list created:</p>")
         self.response.out.write("<p>BC:</p>")
@@ -225,13 +237,15 @@ class DisplayStories(webapp.RequestHandler):
                 else: #NOT SHOW ALL
                     bc_post_text = "See release info at: http://releasenotesgenerator.appspot.com?app_id=%s&label=%s&show_all=on" % (app_id, label)
                     html = html + """<p>** <a href="?app_id=%s&label=%s">Uncheck "show all" to post release notes</a></p>""" % (app_id, label)
-                    create_release_form = ""
-                    create_release_form = create_release_form + """ <form method="POST" action="/create_release" > """
-                    create_release_form = create_release_form + """ <input type="hidden" name="app_id" value="%s" /><input type="hidden" name="label" value="%s" /> """ % (app_id, label)
-                    create_release_form = create_release_form + """ <p class="norm">BC Post Post</p><textarea name="bc_post">%s</textarea> """ % bc_post_text
-                    create_release_form = create_release_form + """ <p class="norm"> <input type="submit" value="Create release in basecamp" /></p> """
-                    create_release_form = create_release_form + """ </form> """
-                    html = html + create_release_form
+                    
+                    if app_id != "293827" and app_id != "293829": #ios and android dont have todos
+                        create_release_form = ""
+                        create_release_form = create_release_form + """ <form method="POST" action="/create_release" > """
+                        create_release_form = create_release_form + """ <input type="hidden" name="app_id" value="%s" /><input type="hidden" name="label" value="%s" /> """ % (app_id, label)
+                        create_release_form = create_release_form + """ <p class="norm">BC Post Post</p><textarea name="bc_post">%s</textarea> """ % bc_post_text
+                        create_release_form = create_release_form + """ <p class="norm"> <input type="submit" value="Create release in basecamp" /></p> """
+                        create_release_form = create_release_form + """ </form> """
+                        html = html + create_release_form
                     
                 if not ready_for_release:
                     release_status = "<h3 style='color:#900;'>Easy, tiger! This release is not ready for production yet...but it's in the cards.</h3>"
@@ -290,11 +304,11 @@ def send_getsat_post(content, topic_id=2700076):
     conn.close()
     return data
 
-def create_release_todo_bc(label, text="no comment sent....", project="86142", todolist="367744" ):
+def create_release_todo_bc(label, text, project, todolist ):
    #curl -u sshadmand:cali4na1 -H 'Content-Type: application/json' -H 'User-Agent: MyApp (yourname@example.com)'  -d '{ "content": "My new project!" }'  https://basecamp.com/1763443/api/v1/projects/86142/todolists/367744/todos.json
    username = settings.BASECAMP_USERNAME
    password = settings.BASECAMP_PASSWORD 
-  
+   
    uri = "/1763443/api/v1/projects/%s/todolists/%s/todos.json" % (project, todolist)
    
    credentials = "%s:%s" % (username, password)
