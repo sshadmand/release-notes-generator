@@ -55,8 +55,12 @@ import xml.dom.minidom
 import settings
 import base64
 import re
+from google.appengine.ext import db
 import simplejson
 
+class Story(db.Model):
+    story_id = db.IntegerProperty()
+        
 class PublishRelease(webapp.RequestHandler):
     def get(self):
         pass
@@ -104,12 +108,19 @@ def clean_text(text):
     cleaned = ''.join(cleaned.split("\n"))
     return cleaned 
 
+
+def get_apps():
+    apps = [{"id":"294005", "name":"API"},
+    {"id":"352393", "name":"GS.Com Web"},
+    {"id":"293827", "name":"iOS SDK"},
+    {"id":"293829", "name":"Android"}]
+    return apps
+
 def get_project_options(app_id):
     socialize_opts = ""
-    socialize_opts =  socialize_opts + """<option value="294005" %s >API</option>""" % ("selected" if app_id == "294005" else "")
-    socialize_opts =  socialize_opts + """<option value="352393" %s>GS.Com Web</option>""" % ("selected" if app_id == "352393" else "")
-    socialize_opts =  socialize_opts + """<option value="293827" %s>iOS SDK</option>""" % ("selected" if app_id == "293827" else "")
-    socialize_opts =  socialize_opts + """<option value="293829" %s>Android</option>""" % ("selected" if app_id == "293829" else "")
+    sz_apps = get_apps()
+    for app in sz_apps:
+        socialize_opts =  socialize_opts + """<option value="%s" %s >%s</option>""" % (app["id"], "selected" if app_id == app["id"] else "", app["name"])
 
     appmakr_opts = ""
     appmakr_opts =  appmakr_opts + """<option value="293825" %s>Android</option>""" % ("selected" if app_id == "293825" else "")
@@ -119,6 +130,75 @@ def get_project_options(app_id):
     appmakr_opts =  appmakr_opts + """<option value="293821" %s>Windows</option>""" % ("selected" if app_id == "293821" else "")
     return socialize_opts, appmakr_opts 
     
+
+class Publicize(webapp.RequestHandler):
+
+    def post(self):
+        completed = self.request.get_all("story_id")
+        for story_id in completed:
+            s = Story()
+            s.story_id = int(story_id)
+            s.put()
+        self.redirect("/publicize")
+        
+    def get(self):
+        completed = Story.all()
+        completed_story_ids = []
+        for story in completed:
+            completed_story_ids.append(str(story.story_id))
+            
+        
+        apps = get_apps()
+        html = """<form action="" method="post">"""
+        html = html + """<input type="submit" value="Complete"/> """
+        for app in apps:
+            stories, count = get_pt_stories(app["id"], "publicize")
+            html = html + "<h3>%s</h3>" % app["name"]
+            for story in stories:
+                story_id = story.getElementsByTagName("id")[0].childNodes[0].data
+                if not story_id in completed_story_ids:
+                    name = story.getElementsByTagName("name")[0].childNodes[0].data
+                    url = story.getElementsByTagName("url")[0].childNodes[0].data                
+                    current_state = story.getElementsByTagName("current_state")[0].childNodes[0].data
+                    description = story.getElementsByTagName("description")[0]
+                    if len(description.childNodes) > 0:
+                        description = description.childNodes[0].data
+                    html = html + """<div>
+                                    <p style="margin:0;padding-bottom:0;">
+                                        <input type="checkbox" value="%s" name="story_id" />
+                                        <a href="%s" target="_blank">%s</a> <i>%s</i>
+                                    </p>
+                                    <p style="color:#777;padding-left:10px;margin:0;padding-bottom:0;">%s</p>
+                                    </div>
+                                    """ % (story_id, url, name, current_state, description )
+        html = html + "</form></html>"
+        self.response.out.write(html)
+
+
+def get_pt_stories(app_id, label=None):
+    uri = "/services/v3/projects/" + app_id + "/stories?filter="
+    if label:
+        uri = uri + "label%3A" + label
+    uri = uri + "%20includedone:true"
+    
+    # print "<p>"
+    #    print uri
+    #    print "</p>"
+    
+    params = urllib.urlencode({})
+    headers = {"X-TrackerToken": settings.TRACKER_TOKEN}
+    conn = httplib.HTTPConnection("www.pivotaltracker.com")
+    conn.request("GET", uri, params, headers)
+    response = conn.getresponse()
+    status = response.status
+    xml_response = response.read()
+    
+    #print xml_response
+    
+    dom = xml.dom.minidom.parseString(xml_response)
+    stories = dom.getElementsByTagName("story")
+    story_count = int(dom.getElementsByTagName("stories")[0].getAttribute("count"))
+    return stories, story_count
 
 class DisplayStories(webapp.RequestHandler):
 
@@ -157,18 +237,7 @@ class DisplayStories(webapp.RequestHandler):
                             """ % (socialize_opts, appmakr_opts, label, show_all_checkbox) )
         
         if app_id:
-            uri = "/services/v3/projects/" + app_id + "/stories?filter=label%3A" + label + "%20includedone:true"
-            params = urllib.urlencode({})
-            headers = {"X-TrackerToken": settings.TRACKER_TOKEN}
-            conn = httplib.HTTPConnection("www.pivotaltracker.com")
-            conn.request("GET", uri, params, headers)
-            response = conn.getresponse()
-            status = response.status
-            xml_response = response.read()
-            dom = xml.dom.minidom.parseString(xml_response)
-            stories = dom.getElementsByTagName("story")
-            
-            story_count = int(dom.getElementsByTagName("stories")[0].getAttribute("count"))
+            stories, story_count = get_pt_stories(app_id, label)
             
             html = ""
             release_status = "Sorry, no data for that search..."
@@ -333,13 +402,16 @@ def create_release_todo_bc(label, text, project, todolist ):
 
    conn.close()
    return data
-    
 
+
+
+       
 def main():
     application = webapp.WSGIApplication([
                                         ('/', DisplayStories),
                                         ('/publish_release', PublishRelease),
                                         ('/create_release', CreateRelease),
+                                        ('/publicize', Publicize),
                                             ],
                                          debug=True)
     util.run_wsgi_app(application)
