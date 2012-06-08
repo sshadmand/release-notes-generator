@@ -57,6 +57,7 @@ import base64
 import re
 from google.appengine.ext import db
 import simplejson
+import bitly
 
 class Story(db.Model):
     story_id = db.IntegerProperty()
@@ -149,6 +150,7 @@ class Publicize(webapp.RequestHandler):
             
         
         apps = get_apps()
+        done_html = ""
         html = """<form action="" method="post">"""
         html = html + """<input type="submit" value="Complete"/> """
         for app in apps:
@@ -156,22 +158,35 @@ class Publicize(webapp.RequestHandler):
             html = html + "<h3>%s</h3>" % app["name"]
             for story in stories:
                 story_id = story.getElementsByTagName("id")[0].childNodes[0].data
+                name = story.getElementsByTagName("name")[0].childNodes[0].data
+                url = story.getElementsByTagName("url")[0].childNodes[0].data
+                current_state = story.getElementsByTagName("current_state")[0].childNodes[0].data
+                try:
+                    description = story.getElementsByTagName("description")[0].childNodes[0].data
+                except:
+                    description = ""
+                try:
+                    owned_by = story.getElementsByTagName("owned_by")[0].childNodes[0].data
+                except:
+                    owned_by = "Not owned yet..."
+                    
                 if not story_id in completed_story_ids:
-                    name = story.getElementsByTagName("name")[0].childNodes[0].data
-                    url = story.getElementsByTagName("url")[0].childNodes[0].data                
-                    current_state = story.getElementsByTagName("current_state")[0].childNodes[0].data
-                    description = story.getElementsByTagName("description")[0]
-                    if len(description.childNodes) > 0:
-                        description = description.childNodes[0].data
                     html = html + """<div>
-                                    <p style="margin:0;padding-bottom:0;">
-                                        <input type="checkbox" value="%s" name="story_id" />
-                                        <a href="%s" target="_blank">%s</a> <i>%s</i>
-                                    </p>
-                                    <p style="color:#777;padding-left:10px;margin:0;padding-bottom:0;">%s</p>
-                                    </div>
-                                    """ % (story_id, url, name, current_state, description )
-        html = html + "</form></html>"
+                                <p style="margin:0;padding-bottom:0;">
+                                    <input type="checkbox" value="%s" name="story_id" />
+                                    <a href="%s" target="_blank">%s</a> <i>%s</i> <span style="font-size:10px;color:#ccc;">%s</span>
+                                </p>
+                                <p style="color:#777;padding-left:20px;margin:0;padding-bottom:0;">%s</p>
+                                </div>
+                                """ % (story_id, url, name, current_state, owned_by, description )
+                else:
+                    done_html = done_html + """<div>
+                                    <p style="margin:0;padding-bottom:0;">%s</p>
+                                </div>
+                                """ % (name)
+        html = html + "</form>"
+        html = html + """<h3 style="color:#CCC;margin:0;padding:0;">Publized/Done</h3><div style="color:#CCC;">""" + done_html + "</div>"
+        html = html + "</html>"
         self.response.out.write(html)
 
 
@@ -182,7 +197,8 @@ def get_pt_stories(app_id, label=None):
     uri = uri + "%20includedone:true"
     
     # print "<p>"
-    #    print uri
+    #print "dsfasfd"
+    #print uri
     #    print "</p>"
     
     params = urllib.urlencode({})
@@ -231,6 +247,7 @@ class DisplayStories(webapp.RequestHandler):
                                  Release Label: <input type=text name=label value="%s" tabindex=0>
                                  <input type="checkbox" name="show_all" id="show_all_checkbox"  %s> <label for="show_all_checkbox">Show All &nbsp;&nbsp;&nbsp;</label>
                                  <input type=submit>
+                                 &nbsp;&nbsp;&nbsp;<span style="font-size:10px;">(<a href="/publicize">View publicize stories</a>)</span>
                                  </form>
                                 </body>
                                 </html> 
@@ -285,7 +302,7 @@ class DisplayStories(webapp.RequestHandler):
                             download = " get it at: https://github.com/socialize/socialize-sdk-ios/downloads"
 
                     get_sat_post = clean_text(release_notes_plain)
-                    topic_url = "http://support.getsocialize.com/socialize/topics/socialize_release_updates_published_on_this_thread#%s" % release_name_slug
+                    topic_url = bitly.shorten("http://support.getsocialize.com/socialize/topics/socialize_release_updates_published_on_this_thread#%s" % release_name_slug)
                     tweet = "Released %s! More details at: %s %s" % (release_name, topic_url, download)
 
 
