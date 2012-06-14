@@ -111,10 +111,10 @@ def clean_text(text):
 
 
 def get_apps():
-    apps = [{"id":"294005", "name":"API"},
-    {"id":"352393", "name":"GS.Com Web"},
+    apps = [{"id":"352393", "name":"GS.Com Web"},
     {"id":"293827", "name":"iOS SDK"},
-    {"id":"293829", "name":"Android"}]
+    {"id":"293829", "name":"Android"},
+    {"id":"294005", "name":"API"}]
     return apps
 
 def get_project_options(app_id):
@@ -150,17 +150,19 @@ class Publicize(webapp.RequestHandler):
             
         
         apps = get_apps()
-        done_html = ""
+        done_html = """<html><body style="font-family:helvetica neue, helvetica;margin-left:20px;">"""
         html = """<form action="" method="post">"""
         html = html + """<input type="submit" value="Complete"/> """
         for app in apps:
             stories, count = get_pt_stories(app["id"], "publicize")
-            html = html + "<h3>%s</h3>" % app["name"]
+            html = html + """<h3 style="font-size: 1.9em;background: #EEE;padding: 6px;border-radius: 5px;margin-bottom: 14px;">%s</h3>""" % app["name"]
             for story in stories:
                 story_id = story.getElementsByTagName("id")[0].childNodes[0].data
                 name = story.getElementsByTagName("name")[0].childNodes[0].data
                 url = story.getElementsByTagName("url")[0].childNodes[0].data
                 current_state = story.getElementsByTagName("current_state")[0].childNodes[0].data
+                labels = story.getElementsByTagName("labels")[0].childNodes[0].data
+                labels = labels.replace("publicize,", "").replace("publicize", "").replace(",", ", ").strip(",").strip()
                 try:
                     description = story.getElementsByTagName("description")[0].childNodes[0].data
                 except:
@@ -171,22 +173,23 @@ class Publicize(webapp.RequestHandler):
                     owned_by = "Not owned yet..."
                     
                 if not story_id in completed_story_ids:
-                    html = html + """<div>
+                    html = html + """<div style="margin-top:8px;margin-left:25px;">
                                 <p style="margin:0;padding-bottom:0;">
-                                    <input type="checkbox" value="%s" name="story_id" />
-                                    <a href="%s" target="_blank">%s</a> <i>%s</i> <span style="font-size:10px;color:#ccc;">%s</span>
+                                    <input type="checkbox" value="%s" name="story_id" style="margin-right: 11px;" />
+                                    <a href="%s" target="_blank" style="font-weight:400;font-size:18px;text-decoration:none;">%s</a> <i style="font-weight:200;color:#777;">%s</i> <span style="font-size:10px;color:#ccc;">%s</span>
                                 </p>
-                                <p style="color:#777;padding-left:20px;margin:0;padding-bottom:0;">%s</p>
+                                <p style="color:#BBB;padding-left:50px;margin:0;padding-bottom:0;font-weight:200;margin-top:2px;line-height: 22px;">%s %s</p>
+                                <p style="color:#BBB;padding-left:50px;margin:0;padding-bottom:0;font-weight:200;margin-top:2px;line-height: 22px;"></p>
                                 </div>
-                                """ % (story_id, url, name, current_state, owned_by, description )
+                                """ % (story_id, url, name.capitalize(), current_state, owned_by, description.capitalize(), labels )
                 else:
                     done_html = done_html + """<div>
-                                    <p style="margin:0;padding-bottom:0;">%s</p>
+                                    <p style="margin:0;padding-bottom:0;margin-left:20px;margin-top:10px;"> <span style="font-size:20px;">&#9745;</span> %s</p>
                                 </div>
                                 """ % (name)
         html = html + "</form>"
-        html = html + """<h3 style="color:#CCC;margin:0;padding:0;">Publized/Done</h3><div style="color:#CCC;">""" + done_html + "</div>"
-        html = html + "</html>"
+        html = html + """<h3 style="color:#CCC;margin:0;padding:0;background: #F7F7F7;padding: 6px;">Publized/Done</h3><div style="color:#CCC;">""" + done_html + "</div>"
+        html = html + "</body></html>"
         self.response.out.write(html)
 
 
@@ -227,7 +230,7 @@ class DisplayStories(webapp.RequestHandler):
         if not label:
             label = "v0."
         
-        apps = {"294005":"API", "352393":"GS.Com Web", "293827":"iOS SDK", "293829":"Android SDK" }
+        apps = {"294005":"API", "352393":"GetSocialize.com", "293827":"iOS SDK", "293829":"Android SDK" }
 
         socialize_opts, appmakr_opts = get_project_options(app_id)
 
