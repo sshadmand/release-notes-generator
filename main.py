@@ -150,13 +150,30 @@ class Publicize(webapp.RequestHandler):
             
         
         apps = get_apps()
-        done_html = """<html><body style="font-family:helvetica neue, helvetica;margin-left:20px;">"""
-        html = """<form action="" method="post">"""
+        done_html = """"""
+        html = """<html><body style="font-family:helvetica neue, helvetica;margin-left:20px;background:#EEE;">
+                <style>
+                    h3 {font-size: 1.9em;background: #CCC;padding: 6px;border-radius: 5px;margin-bottom: 14px;}
+                    .list-item {margin-top:8px;margin-left:25px;width:900px;padding:17px;}
+                    .list-item.odd {background:#F4F4F4;}
+                    .list-item:hover {background:#FFF;}
+                    .list-item .list-item-content {color:#CCC;font-weight:200;}
+                    .list-item:hover .list-item-content {color:#555 !important;font-weight:300;}
+                    .list-item a {color:#55F;}
+                    .list-item:hover a {color:#00F;}
+                </style>
+                <form action="" method="post">
+            """
         html = html + """<input type="submit" value="Complete"/> """
+        counter = 0
         for app in apps:
             stories, count = get_pt_stories(app["id"], "publicize")
-            html = html + """<h3 style="font-size: 1.9em;background: #EEE;padding: 6px;border-radius: 5px;margin-bottom: 14px;">%s</h3>""" % app["name"]
+            html = html + """<h3>%s</h3>""" % app["name"]
             for story in stories:
+                counter = counter + 1
+                odd_color_class = "even"
+                if counter % 2 == 1:
+                    odd_color_class = "odd"                    
                 story_id = story.getElementsByTagName("id")[0].childNodes[0].data
                 name = story.getElementsByTagName("name")[0].childNodes[0].data
                 url = story.getElementsByTagName("url")[0].childNodes[0].data
@@ -173,15 +190,18 @@ class Publicize(webapp.RequestHandler):
                     owned_by = "Not owned yet..."
                     
                 if not story_id in completed_story_ids:
-                    html = html + """<div style="margin-top:8px;margin-left:25px;">
-                                <p style="margin:0;padding-bottom:0;">
-                                    <input type="checkbox" value="%s" name="story_id" style="margin-right: 11px;" />
-                                    <a href="%s" target="_blank" style="font-weight:400;font-size:18px;text-decoration:none;">%s</a> <i style="font-weight:200;color:#777;">%s</i> <span style="font-size:10px;color:#ccc;">%s</span>
-                                </p>
-                                <p style="color:#BBB;padding-left:50px;margin:0;padding-bottom:0;font-weight:200;margin-top:2px;line-height: 22px;">%s %s</p>
-                                <p style="color:#BBB;padding-left:50px;margin:0;padding-bottom:0;font-weight:200;margin-top:2px;line-height: 22px;"></p>
+                    html = html + """
+                                <div class="list-item %s" >
+                                    <input type="checkbox" value="%s" name="story_id" style="margin-right: 11px;display: inline-block;" />
+                                    <div class="list-item-content" style="margin:0;padding-bottom:0;display: inline-block;width: 800px;vertical-align: top;">
+                                        <a href="%s" target="_blank" style="font-weight:400;font-size:18px;text-decoration:none;">%s</a> <i style="font-weight:200;color:#777;">%s</i> <span style="font-size:10px;color:#ccc;">%s</span>
+                                        <p style="padding-left:15px;margin:0;padding-bottom:0;margin-top:2px;line-height: 20px;">
+                                            <span style="color:#999;">%s</span>
+                                            <span style="padding-left:15px;margin:0;padding-bottom:0;margin-top:2px;line-height: 22px;">%s </span>
+                                        </p>
+                                    </div>
                                 </div>
-                                """ % (story_id, url, name.capitalize(), current_state, owned_by, description.capitalize(), labels )
+                                """ % (odd_color_class, story_id, url, name.capitalize(), current_state, owned_by, labels, description.capitalize())
                 else:
                     done_html = done_html + """<div>
                                     <p style="margin:0;padding-bottom:0;margin-left:20px;margin-top:10px;"> <span style="font-size:20px;">&#9745;</span> %s</p>
