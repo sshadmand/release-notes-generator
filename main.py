@@ -54,13 +54,16 @@ import httplib, urllib
 import xml.dom.minidom
 import settings
 import base64
-import re
+import re, os
 from google.appengine.ext import db
+from google.appengine.ext.webapp import template
 import simplejson
 import bitly
 
 class Story(db.Model):
     story_id = db.IntegerProperty()
+    state = db.StringProperty(default="done")
+    extra_description = db.TextProperty(default="")
         
 class PublishRelease(webapp.RequestHandler):
     def get(self):
@@ -135,41 +138,68 @@ def get_project_options(app_id):
 class Publicize(webapp.RequestHandler):
 
     def post(self):
-        completed = self.request.get_all("story_id")
-        for story_id in completed:
-            s = Story()
-            s.story_id = int(story_id)
+        if self.request.get("form_type") == "update_story":
+            description = self.request.get("description")
+            story_id = self.request.get("story_id")
+            state = self.request.get("state", "edited")
+            
+            stories = Story.all()
+            stories.filter("story_id =", int(story_id))
+            
+            if stories.count() > 0:
+                s = stories[0]
+            else:
+                s = Story(story_id=int(story_id))
+                
+            s.extra_description=description
+            s.state=state
             s.put()
-        self.redirect("/publicize")
+            self.response.out.write("Update Complete")
+           
+        else:
+            story_ids = self.request.get("story_ids", "").replace(" ", "")
+            completed_ids = story_ids.split(",")
+            for story_id in completed_ids:
+                if story_id and story_id.isdigit():
+                    stories = Story.all()
+                    stories.filter("story_id =", int(story_id))
+                
+                    if stories.count() > 0:
+                        s = stories[0]
+                    else:
+                        s = Story(story_id=int(story_id))
+                    s.state = "done"
+                    s.put()
+            self.response.out.write("Update Complete")
+#            self.redirect("/publicize")
         
     def get(self):
-        completed = Story.all()
+        stored_stories = Story.all()
         completed_story_ids = []
-        for story in completed:
-            completed_story_ids.append(str(story.story_id))
-            
+        on_deck_story_ids = []
+        saved_stories = {}
+        for story in stored_stories:
+            if story.state == "done":
+                completed_story_ids.append(str(story.story_id))
+            else:
+                if story.extra_description and story.extra_description != "":
+                    saved_stories.update({ str(story.story_id):{"description":story.extra_description, "state":story.state} })
+                if story.state and story.state == "on_deck":
+                    on_deck_story_ids.append(str(story.story_id))
+
         
         apps = get_apps()
-        done_html = """"""
-        html = """<html><body style="font-family:helvetica neue, helvetica;margin-left:20px;background:#EEE;">
-                <style>
-                    h3 {font-size: 1.9em;background: #CCC;padding: 6px;border-radius: 5px;margin-bottom: 14px;}
-                    .list-item {margin-top:8px;margin-left:25px;width:900px;padding:17px;}
-                    .list-item.odd {background:#F4F4F4;}
-                    .list-item:hover {background:#FFF;}
-                    .list-item .list-item-content {color:#CCC;font-weight:200;}
-                    .list-item:hover .list-item-content {color:#555 !important;font-weight:300;}
-                    .list-item a {color:#55F;}
-                    .list-item:hover a {color:#00F;}
-                </style>
-                <form action="" method="post">
-            """
-        html = html + """<input type="submit" value="Complete"/> """
         counter = 0
+        stories_groups = {}
+        stories_list = []
+        done_stories = []
+        on_deck_stories = {"group_name":"On Deck", "stories":[]}
         for app in apps:
+            story_data = {}
             stories, count = get_pt_stories(app["id"], "publicize")
-            html = html + """<h3>%s</h3>""" % app["name"]
+            stories_group = {"group_name": app["name"], "stories": [] } 
             for story in stories:
+                story_data = {}
                 counter = counter + 1
                 odd_color_class = "even"
                 if counter % 2 == 1:
@@ -188,29 +218,46 @@ class Publicize(webapp.RequestHandler):
                     owned_by = story.getElementsByTagName("owned_by")[0].childNodes[0].data
                 except:
                     owned_by = "Not owned yet..."
+                try:
+                    extra_description = saved_stories[story_id]["description"]
+                except:
+                    extra_description = None
+                try:
+                    state = saved_stories[story_id]["state"]
+                except:
+                    state = None                                    
                     
                 if not story_id in completed_story_ids:
-                    html = html + """
-                                <div class="list-item %s" >
-                                    <input type="checkbox" value="%s" name="story_id" style="margin-right: 11px;display: inline-block;" />
-                                    <div class="list-item-content" style="margin:0;padding-bottom:0;display: inline-block;width: 800px;vertical-align: top;">
-                                        <a href="%s" target="_blank" style="font-weight:400;font-size:18px;text-decoration:none;">%s</a> <i style="font-weight:200;color:#777;">%s</i> <span style="font-size:10px;color:#ccc;">%s</span>
-                                        <p style="padding-left:15px;margin:0;padding-bottom:0;margin-top:2px;line-height: 20px;">
-                                            <span style="color:#999;">%s</span>
-                                            <span style="padding-left:15px;margin:0;padding-bottom:0;margin-top:2px;line-height: 22px;">%s </span>
-                                        </p>
-                                    </div>
-                                </div>
-                                """ % (odd_color_class, story_id, url, name.capitalize(), current_state, owned_by, labels, description.capitalize())
+                    story_data.update({ 
+                                        "odd_color_class": odd_color_class,
+                                        "story_id": story_id, 
+                                        "url": url, 
+                                        "name": name.capitalize(), 
+                                        "current_state":current_state, 
+                                        "owned_by":owned_by, 
+                                        "labels":labels, 
+                                        "description": description.capitalize(),
+                                        "extra_description": extra_description,
+                                        "state": state,
+                                    })
+                    if not story_id in on_deck_story_ids:
+                        stories_group["stories"].append(story_data)
+                    else:
+                        on_deck_stories["stories"].append(story_data)
                 else:
-                    done_html = done_html + """<div>
-                                    <p style="margin:0;padding-bottom:0;margin-left:20px;margin-top:10px;"> <span style="font-size:20px;">&#9745;</span> %s</p>
-                                </div>
-                                """ % (name)
-        html = html + "</form>"
-        html = html + """<h3 style="color:#CCC;margin:0;padding:0;background: #F7F7F7;padding: 6px;">Publized/Done</h3><div style="color:#CCC;">""" + done_html + "</div>"
-        html = html + "</body></html>"
-        self.response.out.write(html)
+                    done_stories.append(name)
+            
+            stories_list.append(stories_group)
+        
+        stories_list.insert(0, on_deck_stories)
+        path = os.path.join(os.path.dirname(__file__), 'templates/publicize/index.html')
+        self.response.out.write(template.render(path, {
+                "stories_list": stories_list,
+                "done_stories": done_stories,
+                "saved_stories": saved_stories,
+                "on_deck_stories": on_deck_stories,
+        }))
+
 
 
 def get_pt_stories(app_id, label=None):

@@ -1,0 +1,101 @@
+<html>
+<head>
+<style>
+	body {font-family:helvetica neue, helvetica;margin-left:20px;background:#EEE;}
+	h3 {font-size: 1.9em;background: #CCC;padding: 6px;border-radius: 5px;margin-bottom: 14px;}
+	p.add-more {padding:0;margin:0;margin-left:15px;}
+	p.add-more a {text-decoration:none;color:#CCC;}
+	div.add-more-form-cont {margin-left:15px;}
+	div.add-more-form-cont textarea	{width:600px;height:100px;}
+	.list-item {margin-top:8px;margin-left:25px;width:900px;padding:17px;}
+	.list-item.odd {background:#F4F4F4;}
+	.list-item:hover {background:#FFF;}
+	.list-item .list-item-content {color:#CCC;font-weight:200;}
+	.list-item:hover .list-item-content {color:#555 !important;font-weight:300;}
+	.list-item a {color:#55F;}
+	.list-item:hover a {color:#00F;}
+	.story-done-checkbox {margin-right: 11px;display: inline-block;}
+</style>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js" ></script>
+<script>
+function updateStory(form){
+	data = $(form).serialize();
+	$.ajax({
+	  type: 'POST',
+	  url: '/publicize',
+	  data: data,
+	  success: function(data){alert(data);}
+	});
+	return false;
+}
+
+function completeStory(){
+	values = ""
+	$(".story-done-checkbox:checked").each(function(){
+		values = values + this.value + ",";
+		});
+	$.ajax({
+	  type: 'POST',
+	  url: '/publicize',
+	  data: {"story_ids":values, "form_type": "complete_story"},
+	  success: function(data){document.location='';}
+	});
+}
+
+
+$(document).ready(function(){
+//sdalfkjd
+ });
+</script>
+</head>
+ <body>
+
+<a href="#" onclick="completeStory();">sdfasd</a>
+
+	<input type="submit" value="Complete"/> 
+
+	{% for group in stories_list %}
+		<h3>{{group.group_name}}</h3>
+		{% for story in group.stories %}
+			<div class="list-item {{story.odd_color_class}}" >
+		        <input type="checkbox" value="{{story.story_id}}" name="story_id" class="story-done-checkbox" />
+		        <div class="list-item-content" style="margin:0;padding-bottom:0;display: inline-block;width: 800px;vertical-align: top;">
+		            <a href="{{story.url}}" target="_blank" style="font-weight:400;font-size:18px;text-decoration:none;">{{story.name}}</a>
+					<i style="font-weight:200;color:#777;">{{story.current_state}}</i> <span style="font-size:10px;color:#ccc;">{{story.owned_by}}</span>
+		            <p style="padding-left:15px;margin:0;padding-bottom:0;margin-top:2px;line-height: 20px;">
+		                <span style="color:#999;">{{story.labels}}</span>
+		                <span style="padding-left:15px;margin:0;padding-bottom:0;margin-top:2px;line-height: 22px;">{{story.description}} </span>
+		            </p>
+					<p class="add-more"><a href="javascript:void(0)" onclick="$('#edit-content-{{forloop.counter}}').toggle();" >add more...</a></p>
+		            <div class="add-more-form-cont" style="display:none;" id="edit-content-{{forloop.counter}}">
+						<form action="" onsubmit="return updateStory(this);">
+							<input type="hidden" value="{{story.story_id}}" name="story_id" />
+							<input type="hidden" value="update_story" name="form_type" />
+			                <p><textarea name="description">{{story.extra_description}}</textarea></p>
+							<p>
+								<input type="checkbox" value="on_deck" name="state" id="on-deck-check-{{forloop.counter}}" {%ifequal story.state "on_deck" %}checked{%endifequal%} />
+								<label for="on-deck-check-{{forloop.counter}}">Place story "on deck"</label>
+							</p>
+			                <p><input type="submit" value="update"/></p>
+						</form>
+		            </div>
+		        </div>
+		    </div>
+		{% endfor %}
+	{% endfor %}
+	
+	<h3 style="color:#CCC;margin:0;padding:0;background: #F7F7F7;padding: 6px;">Publicized/Done</h3>
+	<div style="color:#CCC;">
+		{% for story in done_stories %}
+			<div>
+				<p style="margin:0;padding-bottom:0;margin-left:20px;margin-top:10px;"> 
+					<span style="font-size:20px;">&#9745;</span> 
+					{{story}}
+				</p>
+			</div>
+		{% endfor %}
+	</div>
+	
+
+ </body>
+</html>
