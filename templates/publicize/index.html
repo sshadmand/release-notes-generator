@@ -2,11 +2,13 @@
 <head>
 <style>
 	body {font-family:helvetica neue, helvetica;margin-left:20px;background:#EEE;}
-	h3 {font-size: 1.9em;background: #CCC;padding: 6px;border-radius: 5px;margin-bottom: 14px;}
-	p.add-more {padding:0;margin:0;margin-left:15px;}
-	p.add-more a {text-decoration:none;color:#CCC;}
-	div.add-more-form-cont {margin-left:15px;}
+	h3 {font-size: 1.5em;background: #DDD;padding: 6px;border-radius: 5px;margin-bottom: 14px;color:#222;}
+	div.projects h3:first-child {font-size: 1.9em;background: #CCF;padding: 6px;border-radius: 5px;margin-bottom: 14px;}
+	span.add-more {padding:0;margin:0;}
+	span.add-more a {text-decoration:none;color:#CCC;}
+	div.add-more-form-cont {}
 	div.add-more-form-cont textarea	{width:600px;height:100px;}
+	div.list-item-sub-content {margin-left:15px;}
 	.list-item {margin-top:8px;margin-left:25px;width:900px;padding:17px;}
 	.list-item.odd {background:#F4F4F4;}
 	.list-item:hover {background:#FFF;}
@@ -15,6 +17,7 @@
 	.list-item a {color:#55F;}
 	.list-item:hover a {color:#00F;}
 	.story-done-checkbox {margin-right: 11px;display: inline-block;}
+	.description-text {padding:0;margin:0;}
 </style>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js" ></script>
 <script>
@@ -24,7 +27,7 @@ function updateStory(form){
 	  type: 'POST',
 	  url: '/publicize',
 	  data: data,
-	  success: function(data){alert(data);}
+	  success:  function(data){document.location='';}
 	});
 	return false;
 }
@@ -50,10 +53,10 @@ $(document).ready(function(){
 </head>
  <body>
 
-<a href="#" onclick="completeStory();">sdfasd</a>
 
-	<input type="submit" value="Complete"/> 
 
+	<input type="button" onclick="completeStory();" value="Complete/Finish checked stories"/> 
+<div class="projects">
 	{% for group in stories_list %}
 		<h3>{{group.group_name}}</h3>
 		{% for story in group.stories %}
@@ -61,28 +64,41 @@ $(document).ready(function(){
 		        <input type="checkbox" value="{{story.story_id}}" name="story_id" class="story-done-checkbox" />
 		        <div class="list-item-content" style="margin:0;padding-bottom:0;display: inline-block;width: 800px;vertical-align: top;">
 		            <a href="{{story.url}}" target="_blank" style="font-weight:400;font-size:18px;text-decoration:none;">{{story.name}}</a>
-					<i style="font-weight:200;color:#777;">{{story.current_state}}</i> <span style="font-size:10px;color:#ccc;">{{story.owned_by}}</span>
-		            <p style="padding-left:15px;margin:0;padding-bottom:0;margin-top:2px;line-height: 20px;">
-		                <span style="color:#999;">{{story.labels}}</span>
-		                <span style="padding-left:15px;margin:0;padding-bottom:0;margin-top:2px;line-height: 22px;">{{story.description}} </span>
-		            </p>
-					<p class="add-more"><a href="javascript:void(0)" onclick="$('#edit-content-{{forloop.counter}}').toggle();" >add more...</a></p>
-		            <div class="add-more-form-cont" style="display:none;" id="edit-content-{{forloop.counter}}">
-						<form action="" onsubmit="return updateStory(this);">
-							<input type="hidden" value="{{story.story_id}}" name="story_id" />
-							<input type="hidden" value="update_story" name="form_type" />
-			                <p><textarea name="description">{{story.extra_description}}</textarea></p>
-							<p>
-								<input type="checkbox" value="on_deck" name="state" id="on-deck-check-{{forloop.counter}}" {%ifequal story.state "on_deck" %}checked{%endifequal%} />
-								<label for="on-deck-check-{{forloop.counter}}">Place story "on deck"</label>
-							</p>
-			                <p><input type="submit" value="update"/></p>
-						</form>
-		            </div>
-		        </div>
-		    </div>
+					<div class="list-item-sub-content">
+						
+						<i style="font-weight:200;color:#777;">{{story.current_state}}</i> <span style="font-size:10px;color:#ccc;">{{story.owned_by}}</span>
+			            <p style="margin:0;padding-bottom:0;margin-top:2px;line-height: 20px;">
+			                <span style="color:#999;">{{story.labels}}</span>
+			                <span style="padding-left:15px;margin:0;padding-bottom:0;margin-top:2px;line-height: 22px;">{{story.description}} </span>
+			            </p>
+						<span id="description-text-{{forloop.counter}}{{forloop.parentloop.counter}}" class="description-text">
+							{{story.extra_description|default:""}}
+						</span>
+						<span class="add-more">
+							<a href="javascript:void(0)" onclick="$('#edit-content-{{forloop.counter}}{{forloop.parentloop.counter}}, #description-text-{{forloop.counter}}{{forloop.parentloop.counter}}').toggle();" >
+								add more...
+							</a>
+						</span>
+			            <div class="add-more-form-cont" style="display:none;" id="edit-content-{{forloop.counter}}{{forloop.parentloop.counter}}">
+							<form action="" onsubmit="return updateStory(this);">
+								<input type="hidden" value="{{story.story_id}}" name="story_id" />
+								<input type="hidden" value="update_story" name="form_type" />
+				                <p><textarea name="description">{{story.extra_description|default:""}}</textarea></p>
+								<p>
+									<input type="checkbox" value="on_deck" name="state" id="on-deck-check-{{forloop.counter}}{{forloop.parentloop.counter}}" {%ifequal story.state "on_deck" %}checked{%endifequal%} />
+									<label for="on-deck-check-{{forloop.counter}}{{forloop.parentloop.counter}}">Place story "on deck"</label>
+								</p>
+				                <p><input type="submit" value="update"/></p>
+							</form>
+			            </div>
+
+					</div><!--list item sub content-->
+		        </div><!--list item content -->
+		    </div><!--list item  -->
 		{% endfor %}
 	{% endfor %}
+</div>
+	<input type="button" onclick="completeStory();" value="Complete/Finish checked stories"/> 
 	
 	<h3 style="color:#CCC;margin:0;padding:0;background: #F7F7F7;padding: 6px;">Publicized/Done</h3>
 	<div style="color:#CCC;">
