@@ -2,6 +2,22 @@
 <head>
 <style>
 	body {font-family:helvetica neue, helvetica;margin-left:20px;background:#EEE;}
+	#status {
+		position: fixed;
+		top: 0;
+		left: 50%;
+		background-color: #BBB;
+		color: black;
+		padding: 11px;
+		width: 200px;
+		text-align: center;
+		font-weight: bold;
+		box-shadow: 0px 0px 6px rgba(0, 0, 0, .8);
+		border: #EEE 1px solid;
+		border-top: none;
+		opacity: .9;
+		text-shadow: 1px 1px 1px white;
+	}
 	h3 {font-size: 1.5em;background: #DDD;padding: 6px;border-radius: 5px;margin-bottom: 14px;color:#222;}
 	div.projects h3:first-child {font-size: 1.9em;background: #CCF;padding: 6px;border-radius: 5px;margin-bottom: 14px;}
 	span.add-more {padding:0;margin:0;}
@@ -9,6 +25,12 @@
 	div.add-more-form-cont {}
 	div.add-more-form-cont textarea	{width:600px;height:100px;}
 	div.list-item-sub-content {margin-left:15px;}
+	div.list-item-sub-content a {color:#BBB;}
+	.labels {margin-top:5px;margin-bottom:8px;}
+	.labels span {color: #555;background: #D6D6D6;padding: 3px 8px;border-radius: 5px;font-size:12px;font-weight: 400;}
+	.labels span:hover {background: #DDD;}
+	.orig-description {margin:0;padding-bottom:0;margin-top:2px;line-height: 20px;}
+	.orig-description span	{margin:0;padding-bottom:0;margin-top:2px;line-height: 22px;}
 	.list-item {margin-top:8px;margin-left:25px;width:900px;padding:17px;}
 	.list-item.odd {background:#F4F4F4;}
 	.list-item:hover {background:#FFF;}
@@ -21,13 +43,36 @@
 </style>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js" ></script>
 <script>
+
+function flashStatus(zfunc){
+	$("#status").fadeIn("slow", function(){
+			zfunc();
+			setTimeout('$("#status").fadeOut("slow");', 1000);
+	});
+}
+
 function updateStory(form){
 	data = $(form).serialize();
 	$.ajax({
 	  type: 'POST',
 	  url: '/publicize',
 	  data: data,
-	  success:  function(data){document.location='';}
+	  success:  function(data){
+				on_deck_state = $(form).find(".state-checkbox:checked").val();
+				is_on_deck = $(form).closest('.group').hasClass("on-deck");
+				new_desc = $(form).find("textarea").val();
+				$(form).closest('.list-item').find(".description-text").html(new_desc);
+				$(form).closest('.list-item').find(".orig-description").hide();
+				$(form).closest('.add-more-form-cont').slideUp();
+				
+				flashStatus(function(){		
+						if (on_deck_state && !is_on_deck){
+							$(form).closest('.list-item ').fadeOut("slow", function(){
+										$(form).closest('.list-item ').appendTo(".projects .group:first").fadeIn();
+								});
+						}
+					});
+			}
 	});
 	return false;
 }
@@ -52,30 +97,39 @@ $(document).ready(function(){
 </script>
 </head>
  <body>
-
+<div id="status" style="display:none;">Updated</div>
 
 
 	<input type="button" onclick="completeStory();" value="Complete/Finish checked stories"/> 
 <div class="projects">
 	{% for group in stories_list %}
 		<h3>{{group.group_name}}</h3>
+		<div class="group {{group.group_name|lower|slugify}}">
 		{% for story in group.stories %}
 			<div class="list-item {{story.odd_color_class}}" >
 		        <input type="checkbox" value="{{story.story_id}}" name="story_id" class="story-done-checkbox" />
 		        <div class="list-item-content" style="margin:0;padding-bottom:0;display: inline-block;width: 800px;vertical-align: top;">
 		            <a href="{{story.url}}" target="_blank" style="font-weight:400;font-size:18px;text-decoration:none;">{{story.name}}</a>
+					<i style="font-weight:200;color:#777;">{{story.current_state}}</i> <span style="font-size:10px;color:#ccc;">{{story.owned_by}}</span>
+										
 					<div class="list-item-sub-content">
-						
-						<i style="font-weight:200;color:#777;">{{story.current_state}}</i> <span style="font-size:10px;color:#ccc;">{{story.owned_by}}</span>
-			            <p style="margin:0;padding-bottom:0;margin-top:2px;line-height: 20px;">
-			                <span style="color:#999;">{{story.labels}}</span>
-			                <span style="padding-left:15px;margin:0;padding-bottom:0;margin-top:2px;line-height: 22px;">{{story.description}} </span>
+						<div class="labels">
+						{% for label in story.label_list%}
+							{% if label %}
+							<span>{{label}}</span>
+							{% endif %}
+						{% endfor %}
+						</div>
+			            <p class="orig-description">
+							{% if not story.extra_description %}
+			                <span class="orig-description-text">{{story.description|urlize|capfirst}} </span>
+							{% endif %}
 			            </p>
 						<span id="description-text-{{forloop.counter}}{{forloop.parentloop.counter}}" class="description-text">
-							{{story.extra_description|default:""}}
+							{{story.extra_description|default:""|urlize|capfirst}}
 						</span>
 						<span class="add-more">
-							<a href="javascript:void(0)" onclick="$('#edit-content-{{forloop.counter}}{{forloop.parentloop.counter}}, #description-text-{{forloop.counter}}{{forloop.parentloop.counter}}').toggle();" >
+							<a href="javascript:void(0)" onclick="$('#edit-content-{{forloop.counter}}{{forloop.parentloop.counter}}, #description-text-{{forloop.counter}}{{forloop.parentloop.counter}}').slideDown();" >
 								add more...
 							</a>
 						</span>
@@ -83,18 +137,22 @@ $(document).ready(function(){
 							<form action="" onsubmit="return updateStory(this);">
 								<input type="hidden" value="{{story.story_id}}" name="story_id" />
 								<input type="hidden" value="update_story" name="form_type" />
-				                <p><textarea name="description">{{story.extra_description|default:""}}</textarea></p>
+				                <p><textarea name="description">{{story.extra_description|default:story.description}}</textarea></p>
 								<p>
-									<input type="checkbox" value="on_deck" name="state" id="on-deck-check-{{forloop.counter}}{{forloop.parentloop.counter}}" {%ifequal story.state "on_deck" %}checked{%endifequal%} />
+									<input type="checkbox" value="on_deck" name="state" class="state-checkbox" id="on-deck-check-{{forloop.counter}}{{forloop.parentloop.counter}}" {%ifequal story.state "on_deck" %}checked{%endifequal%} />
 									<label for="on-deck-check-{{forloop.counter}}{{forloop.parentloop.counter}}">Place story "on deck"</label>
 								</p>
-				                <p><input type="submit" value="update"/></p>
+				                <p>
+									<input type="submit" value="update"/>
+									<input type="button" value="close" onclick="$('#edit-content-{{forloop.counter}}{{forloop.parentloop.counter}}').slideUp();" />
+								</p>
 							</form>
 			            </div>
 
 					</div><!--list item sub content-->
 		        </div><!--list item content -->
 		    </div><!--list item  -->
+		</div><!-- group -->
 		{% endfor %}
 	{% endfor %}
 </div>

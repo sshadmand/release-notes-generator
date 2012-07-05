@@ -60,6 +60,8 @@ from google.appengine.ext.webapp import template
 import simplejson
 import bitly
 
+SZ_APPS = {"294005":"API", "352393":"GetSocialize.com", "293827":"iOS SDK", "293829":"Android SDK" }
+
 class Story(db.Model):
     story_id = db.IntegerProperty()
     state = db.StringProperty(default="done")
@@ -210,6 +212,10 @@ class Publicize(webapp.RequestHandler):
                 current_state = story.getElementsByTagName("current_state")[0].childNodes[0].data
                 labels = story.getElementsByTagName("labels")[0].childNodes[0].data
                 labels = labels.replace("publicize,", "").replace("publicize", "").replace(",", ", ").strip(",").strip()
+                label_list = labels.split(",")
+                
+                label_list.append(app["name"])
+                
                 try:
                     description = story.getElementsByTagName("description")[0].childNodes[0].data
                 except:
@@ -235,8 +241,9 @@ class Publicize(webapp.RequestHandler):
                                         "name": name.capitalize(), 
                                         "current_state":current_state, 
                                         "owned_by":owned_by, 
-                                        "labels":labels, 
-                                        "description": description.capitalize(),
+                                        "labels":labels,
+                                        "label_list": label_list,
+                                        "description": description,
                                         "extra_description": extra_description,
                                         "state": state,
                                     })
@@ -297,8 +304,8 @@ class DisplayStories(webapp.RequestHandler):
         if not label:
             label = "v0."
         
-        apps = {"294005":"API", "352393":"GetSocialize.com", "293827":"iOS SDK", "293829":"Android SDK" }
-
+        apps = SZ_APPS
+        
         socialize_opts, appmakr_opts = get_project_options(app_id)
 
         self.response.out.write("""
