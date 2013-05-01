@@ -48,6 +48,7 @@ LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE, DAMMIT.
 """
+import webapp2 as webapp
 from google.appengine.ext import webapp
 from google.appengine.ext.webapp import util
 import httplib, urllib
@@ -57,7 +58,7 @@ import base64
 import re, os
 from google.appengine.ext import db
 from google.appengine.ext.webapp import template
-import simplejson
+from django.utils import simplejson 
 import bitly
 
 SZ_APPS = {"294005":"API", "352393":"GetSocialize.com", "293827":"iOS SDK", "293829":"Android SDK" }
@@ -500,15 +501,15 @@ def create_release_todo_bc(label, text, project, todolist ):
 
 
        
-def main():
-    application = webapp.WSGIApplication([
+
+app = webapp.WSGIApplication([
                                         ('/', DisplayStories),
                                         ('/publish_release', PublishRelease),
                                         ('/create_release', CreateRelease),
                                         ('/publicize', Publicize),
                                             ],
                                          debug=True)
-    util.run_wsgi_app(application)
+
 
 
 if __name__ == '__main__':

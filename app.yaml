@@ -1,8 +1,13 @@
 application: releasenotesgenerator
-version: 4
-runtime: python
+version: 5
+runtime: python27
 api_version: 1
+threadsafe: false
 
 handlers:
 - url: .*
-  script: main.py
+  script: main.app
+
+libraries:
+- name: django
+  version: "1.4"
