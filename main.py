@@ -269,15 +269,15 @@ class Publicize(webapp.RequestHandler):
 
 
 def get_pt_stories(app_id, label=None):
-    uri = "/services/v3/projects/" + app_id + "/stories?filter="
-    if label:
+    uri = "/services/v3/projects/" + app_id + "/stories?limit=50&filter="
+    if label and label != "" :
         uri = uri + "label%3A" + label
     uri = uri + "%20includedone:true"
     
-    # print "<p>"
-    #print "dsfasfd"
-    #print uri
-    #    print "</p>"
+    print "*****"
+    print label
+    print uri
+    print "*****"
     
     params = urllib.urlencode({})
     headers = {"X-TrackerToken": settings.TRACKER_TOKEN}
@@ -294,9 +294,14 @@ def get_pt_stories(app_id, label=None):
     story_count = int(dom.getElementsByTagName("stories")[0].getAttribute("count"))
     return stories, story_count
 
+class GetLatestStories(webapp.RequestHandler):
+    def get(self):
+        pass
+
 class DisplayStories(webapp.RequestHandler):
 
     def get(self):
+
         label = str(self.request.get("label"))
         post_release = self.request.get("post_release")
         app_id = str(self.request.get("app_id"))
@@ -304,7 +309,7 @@ class DisplayStories(webapp.RequestHandler):
         show_all_checkbox = "checked" if show_all else ""
         if not label:
             label = "v0."
-        
+
         apps = SZ_APPS
         
         socialize_opts, appmakr_opts = get_project_options(app_id)
@@ -341,6 +346,8 @@ class DisplayStories(webapp.RequestHandler):
             
             release_notes = ""
             release_notes_plain = ""
+            
+            print "STORY COUNT %s" % story_count
             if story_count > 0:
                 release_notes = release_notes + "<ol id='copytext'>"
                 for story in stories:
@@ -351,8 +358,10 @@ class DisplayStories(webapp.RequestHandler):
                       ready_for_release = False
                       if story_type == "release":
                           released_to_prod = False
-
-                  labels = story.getElementsByTagName("labels")[0].childNodes[0].data
+                  
+                  labels = ""
+                  if len(story.getElementsByTagName("labels")) > 0:
+                      labels = story.getElementsByTagName("labels")[0].childNodes[0].data
                   if show_all or (not story_type in ["release", "chore"] and not "private" in labels):
                     name = story.getElementsByTagName("name")[0].childNodes[0].data
                     url = story.getElementsByTagName("url")[0].childNodes[0].data                    
