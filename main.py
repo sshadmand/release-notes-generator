@@ -448,15 +448,14 @@ def _slugify(value):
     return _slugify_hyphenate_re.sub('-', value)    
     
 def send_tweet(status):
-    import tweepy
-    consumer_key=settings.TWITTER_CONSUMER_KEY
-    consumer_secret=settings.TWITTER_CONSUMER_SECRET
-    access_token=settings.TWITTER_ACCESS_TOKEN
-    access_token_secret=settings.TWITTER_ACCESS_TOKEN_SECRET
-    auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
-    auth.set_access_token(access_token, access_token_secret)
-    api = tweepy.API(auth)
-    return api.update_status(status)
+    from twitter import *
+    t = Twitter(
+            auth=OAuth(settings.TWITTER_OAUTH_TOKEN, settings.TWITTER_OAUTH_SECRET,
+                       settings.TWITTER_CONSUMER_KEY, settings.TWITTER_CONSUMER_SECRET)
+           )
+    r = t.statuses.update(status=status)
+
+    return r
 
 def send_getsat_post(content, topic_id=2700076):
     username = settings.GETSAT_USERNAME
