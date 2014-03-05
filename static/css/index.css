@@ -1,0 +1,35 @@
+.ajax-indicator{
+	position: fixed;
+	z-index: 9999;
+	width:100%;
+}
+
+.ajax-indicator .loading{
+	background-color: #FFF;
+	margin-left: auto;
+  	margin-right: auto;
+	padding: 5px;
+	display: none;
+	width: 100px;
+	text-align: center;
+}
+
+.ajax-indicator .complete{
+	background-color: #0C0;
+	margin-left: auto;
+  	margin-right: auto;
+	padding: 5px;
+	display: none;
+	width: 100px;
+	text-align: center;
+}
+
+.ajax-indicator .error{
+	background-color: #C00;
+	margin-left: auto;
+  	margin-right: auto;
+	padding: 5px;
+	display: none;
+	width: 100px;
+	text-align: center;
+}
