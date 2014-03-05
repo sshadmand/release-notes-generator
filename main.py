@@ -13,7 +13,7 @@ import bitly
 from jira_connect import *
 import logging
 
-        
+
 
 class Index(webapp.RequestHandler):
 

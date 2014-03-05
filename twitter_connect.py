@@ -1,83 +1,23 @@
-# -*- encoding: utf-8 -*-
-from __future__ import unicode_literals
-import requests
-from requests_oauthlib import OAuth1
-from urlparse import parse_qs
-import json
-import settings 
+from twitter import *
 
-REQUEST_TOKEN_URL = "https://api.twitter.com/oauth/request_token"
-AUTHORIZE_URL = "https://api.twitter.com/oauth/authorize?oauth_token="
-ACCESS_TOKEN_URL = "https://api.twitter.com/oauth/access_token"
-
-CONSUMER_KEY = settings.TWITTER_CONSUMER_KEY
-CONSUMER_SECRET = settings.TWITTER_CONSUMER_SECRET
-
-OAUTH_TOKEN = settings.TWITTER_ACCESS_TOKEN
-OAUTH_TOKEN_SECRET = settings.TWITTER_ACCESS_TOKEN_SECRET
+class TwitterConnect():
+	def __init__():
+	    self.t = Twitter(
+        			auth=OAuth(settings.TWITTER_OAUTH_TOKEN, settings.TWITTER_OAUTH_SECRET,
+                    settings.TWITTER_CONSUMER_KEY, settings.TWITTER_CONSUMER_SECRET)
+		           )
 
 
-def setup_oauth():
-    """Authorize your app via identifier."""
-    # Request token
-    oauth = OAuth1(CONSUMER_KEY, client_secret=CONSUMER_SECRET)
-    r = requests.post(url=REQUEST_TOKEN_URL, auth=oauth)
-    credentials = parse_qs(r.content)
+	def _send_tweet(self, status):
+    	r = t.statuses.update(status=status)
+    	return r
 
-    resource_owner_key = credentials.get('oauth_token')[0]
-    resource_owner_secret = credentials.get('oauth_token_secret')[0]
+    def tweet_release(self, release_name, more_info_url=None, download_url=None):
+    	tweet = "Released %s!" % release_name
+    	
+    	if more_info_url:
+    		tweet += "More details at: %s" % (topic_url)
+    	if download_url:
+    		tweet += " Download at: %s " % (download_url)
 
-    # Authorize
-    authorize_url = AUTHORIZE_URL + resource_owner_key
-    print 'Please go here and authorize: ' + authorize_url
-
-    verifier = raw_input('Please input the verifier: ')
-    oauth = OAuth1(CONSUMER_KEY,
-                   client_secret=CONSUMER_SECRET,
-                   resource_owner_key=resource_owner_key,
-                   resource_owner_secret=resource_owner_secret,
-                   verifier=verifier)
-
-    # Finally, Obtain the Access Token
-    r = requests.post(url=ACCESS_TOKEN_URL, auth=oauth)
-    credentials = parse_qs(r.content)
-    token = credentials.get('oauth_token')[0]
-    secret = credentials.get('oauth_token_secret')[0]
-
-    return token, secret
-
-
-def get_oauth():
-    oauth = OAuth1(CONSUMER_KEY,
-                client_secret=CONSUMER_SECRET,
-                resource_owner_key=OAUTH_TOKEN,
-                resource_owner_secret=OAUTH_TOKEN_SECRET)
-    return oauth
-
-def get_user_data_by_id(user_id):
-    oauth = get_oauth()
-    r = requests.get(url="https://api.twitter.com/1.1/users/show.json?user_id=%s" % user_id, auth=oauth)
-    data = r.json()
-    return data
-
-def tweet(status):
-    oauth = get_oauth()
-    data = {"status": status}
-    r = requests.post(url="https://api.twitter.com/1.1/statuses/update.json", data=data)
-    data = r.json()
-    print data
-    return data
-
-
-
-# if __name__ == "__main__":
-#     if not OAUTH_TOKEN:
-#         token, secret = setup_oauth()
-#         print "OAUTH_TOKEN: " + token
-#         print "OAUTH_TOKEN_SECRET: " + secret
-#         print
-#     else:
-#         oauth = get_oauth()
-#         data = get_user_data_by_id(357669107)
-#         print data["screen_name"]
-
+    	return self._send_tweet(status)
