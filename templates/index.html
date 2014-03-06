@@ -7,12 +7,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="">
     <meta name="author" content="">
-    <link rel="shortcut icon" href="../../assets/ico/favicon.ico">
+    <link rel="shortcut icon" href="/static/images/ico/favicon.ico">
 
     <title>Jumbotron Template for Bootstrap</title>
 
-    <!-- Bootstrap core CSS -->
+    <!-- Global -->
     <link href="/static/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.10.4/themes/smoothness/jquery-ui.css">
+    <link href="/static/css/global.css" rel="stylesheet">
 
     <!-- Just for debugging purposes. Don't actually copy this line! -->
     <!--[if lt IE 9]><script src="../../assets/js/ie8-responsive-file-warning.js"></script><![endif]-->
@@ -22,9 +24,6 @@
       <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
       <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
     <![endif]-->
-
-    <!-- Page Specific CSS -->
-    <link href="/static/css/index.css" rel="stylesheet">
 
 
   </head>
@@ -108,10 +107,9 @@ vertical-align: top;" /></span>
     <div class="container">
     	<h2>Issues <small></small></h2>
 
-    	<form role="form">
-
 		<table id="issues" class="table table-striped table-hover">
 			<thead>
+				<td>Type</td>
 				<td>ID</td>
 				<td>Summary</td>
 				<td>Publicize</td>
@@ -120,30 +118,33 @@ vertical-align: top;" /></span>
 			</tbody>
 		</table>
 
-		
-		  <fieldset>
-		    <button type="submit" class="btn btn-primary pull-right">Generate Post</button>
-		  </fieldset>
-
+		<form role="form" onsubmit="postIssuesToTwitterAndGetsat(this);return false;">
+			<div class="input-group col-xs-4 ">
+			  	<input type="text" class="form-control" placeholder="Ver." id="version_no">
+			  	<span class="input-group-btn">
+				    <button type="submit" class="btn btn-primary pull-right">Update Twitter Status w/ notes on GetSat <span class="glyphicon glyphicon-send"></span></button>
+				</span>
+			</div>
 		</form>
 
 	</div><!-- container -->
-
-
-
 
 
     <!-- Bootstrap core JavaScript
     ================================================== -->
     <!-- Placed at the end of the document so the pages load faster -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+    <script src="//code.jquery.com/ui/1.10.4/jquery-ui.js"></script>
     <script src="/static/bootstrap/js/bootstrap.min.js"></script>
-    <script src="/static/js/search-jira.js"></script>
+    <script src="/static/js/global_ajax.js"></script>
+    <script src="/static/js/search_jira.js"></script>
+    <script src="/static/js/post_issues.js"></script>
     <script>
 
 		$( document ).ready(function() {
 		    console.log( "ready!" );
 		});
+
 
     </script>
   </body>

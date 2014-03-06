@@ -8,7 +8,7 @@ import json
 import logging
 
 
-class jira_connect():
+class JIRAConnect():
 
     def __init__(self):
         username = settings.JIRA_USERNAME

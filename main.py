@@ -11,6 +11,7 @@ from google.appengine.ext.webapp import template
 from django.utils import simplejson 
 import bitly
 from jira_connect import *
+from getsat_connect import *
 import logging
 
 
@@ -32,22 +33,36 @@ class Index(webapp.RequestHandler):
 class GetIssues(webapp.RequestHandler):
 
     def post(self):
-        return "{}"
+        return None
         
     def get(self):
         jql = self.request.get("jql")
         logging.info('JQL Request:' + jql)
-        jcon = jira_connect()
+
+        jcon = JIRAConnect()
         data = jcon.jira_jql(search_string=jql)
 
         self.response.headers['Content-Type'] = 'application/json'
         self.response.out.write(json.dumps(data))
 
-       
+class PostIssuesToTwitterAndGetSat(webapp.RequestHandler):
+
+    def post(self):
+        issues = self.request.get("issues")
+        issues = json.loads(issues)
+
+        getsat_conn = GetSatConnect()
+        getsat_conn.post_release_to_getsat_updates(issues)
+
+        
+    def get(self):
+        return None        
+
 
 app = webapp.WSGIApplication([
                                         ('/', Index),
                                         ('/get_issues', GetIssues),
+                                        ('/post_issues_to_twitter_and_getsat', PostIssuesToTwitterAndGetSat),
 
                                             ],
                                          debug=True)
