@@ -1,0 +1,8 @@
+[report]
+omit = 
+	*Library*
+	/usr/local/bin/nosetests
+	twitter/*
+	tests/*
+	pivotal_old.py
+	bitly.py
