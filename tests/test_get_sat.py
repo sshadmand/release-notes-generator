@@ -59,3 +59,15 @@ class TestGetSat:
 
         #assertions
         httpcon_mock.request.assert_called_once()
+
+    def test_create_getsat_update_text(self):
+        issues = [{"type": "bug", "id":"LWEB1", "summary": "Test bug"}]
+        release_name, anchor = "release_name", "anchor"
+        gscon = getsat_connect.GetSatConnect()
+
+        #mock
+        gscon._clean_text = MagicMock(return_value="cleaned text")
+
+        #call main function
+        gscon._create_getsat_update_text(issues, release_name, anchor)
+

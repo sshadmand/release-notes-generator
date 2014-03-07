@@ -54,7 +54,7 @@ class GetSatConnect():
         value = unicode(_slugify_strip_re.sub('', value).strip().lower())
         return _slugify_hyphenate_re.sub('-', value)
 
-    def _create_getsat_update_text(issues, release_name, anchor):
+    def _create_getsat_update_text(self, issues, release_name, anchor):
         release_notes_plain = "<a name='%s'></a><p>%s:</p>" % (anchor, release_name)
 
         for issue in issues:
