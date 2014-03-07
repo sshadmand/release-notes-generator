@@ -2,3 +2,4 @@
 *.tmproj
 settings.py
 cover
+.coverage
