@@ -45,3 +45,7 @@
 .jumbotron {
 	padding-top: 0px;
 }
+
+.alert {
+	display:none;margin-top:8px;position:absolute;padding:5px;
+}

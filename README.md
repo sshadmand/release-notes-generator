@@ -1,39 +1,37 @@
-TeamCty Monitor
+Release Notes Generator
 ===============
 
-For internal use only. Creates a dashboard for our C.I. Server for all prjects and records and displays their coverage over time.
+Pulls JIRA issues for publication to Twitter and GetSatisfaction
 
-Contributing
-------------
+Environment Setup
+-----------------
 
-Want to contribute? Great! Here's how.....
+First, make sure you have pip installed:
 
+	sudo easy_install pip
 
-### Commands
+Then install remaining requirements for pip:
 
-If nothing complains, congratulations!
+	sudo pip install -r requirements.txt
 
+Testing
+-------
 
-### Classes
+To run test suite:
 
-Tests should be added in the same manner as described under the
-`Commands` section.
+    #> nosetests tests --with-coverage --cover-html
 
+ [optional: --nocapture to allow std out to orint to screen.]
 
-Installation
------------
+Results will be located in:
 
-    [install stuff here]
+	$ cover/index.html
 
+If there are packages that need omission or other settings use .coveragerc
 
-Usage
------
+Mock documentation found at:
 
-    require '....'
-
-Or, more realistically:
-
-    require '......'
+	http://mock.readthedocs.org/en/latest/
 
 Testing
 -------

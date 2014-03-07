@@ -31,13 +31,21 @@ function postIssuesToTwitterAndGetsat(form){
 	console.log(issues.length);
 
 	form_failed = false;
+	message = "";
+
+	version_no = $(form).find('#version_no').val();
+
 	if (issues.length == 0){
 		form_failed=true;
-	 	
-	}else if ($(form).find('#version_no').val() == ''){
+	 	message = "You must have issues selected to publish them as a release."
+	
+	}else if (release_name == ''){
 		form_failed=true;
+		message = "You must enter a release name to post. Example: LAPI - v2.2"
 	} 
+	
 	if (form_failed){
+		$("#post-release-error-message").html(message).show().delay(3000).fadeOut(200);
 		$(form).effect('shake');
 		return false;
 	}
@@ -46,13 +54,14 @@ function postIssuesToTwitterAndGetsat(form){
 	$.ajax({
 	    url: "/post_issues_to_twitter_and_getsat",
 	    data: {
-	    	issues: JSON.stringify(issues)
+	    	issues: JSON.stringify(issues),
+	    	release_name: $("#release_name").val(),
 	    },
 	    type: "POST",
 	    dataType : "json",
 
 	    success: function( json ) {
-
+		  	ajaxSuccess();
 	    },
 
 	    error:ajaxError

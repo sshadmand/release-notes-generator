@@ -99,7 +99,7 @@ vertical-align: top;" /></span>
 		</div><!-- /.row -->
 		</form>
       	
-      	<div id="jql-error-query-message" class="alert alert-warning" style="display:none;margin-top:8px;position:absolute;padding:5px;"></div>
+      	<div id="jql-error-query-message" class="alert alert-warning" ></div>
       
       </div><!-- container -->
     </div><!-- jumbotron -->
@@ -118,14 +118,20 @@ vertical-align: top;" /></span>
 			</tbody>
 		</table>
 
-		<form role="form" onsubmit="postIssuesToTwitterAndGetsat(this);return false;">
-			<div class="input-group col-xs-4 ">
-			  	<input type="text" class="form-control" placeholder="Ver." id="version_no">
-			  	<span class="input-group-btn">
-				    <button type="submit" class="btn btn-primary pull-right">Update Twitter Status w/ notes on GetSat <span class="glyphicon glyphicon-send"></span></button>
-				</span>
+		<div id="post-container" class="pull-right">
+			<div style="height:50px;">
+				<div id="post-release-error-message" class="alert alert-warning" style="width: 483px;" ></div>
 			</div>
-		</form>
+
+
+
+			<form role="form" class="form-inline" onsubmit="postIssuesToTwitterAndGetsat(this);return false;">
+				<div class="form-group">
+					<input type="text" class="form-control" placeholder="Version ex: LAPI v2.2" id="release_name">
+					<button type="submit" class="btn btn-primary">Update Twitter Status w/ notes on GetSat <span class="glyphicon glyphicon-send"></span></button>
+				</div>
+			</form>
+		</div><!-- post conatiner -->
 
 	</div><!-- container -->
 
