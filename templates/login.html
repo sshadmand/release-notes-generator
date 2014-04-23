@@ -25,19 +25,22 @@
 	    
 			{% if user %}
 			<p>You are currently logged in as {{user.email}}. </p>
-			{% endif %}
 			<p>You must be signed in as a ShareThis.com user to use this site.</p>
-		
-		<p>
-			<a href="{{login_url}}">
-				<button class="btn btn-primary">Login</button>
-			</a> 
-			{% if user %}
-			<a href="{{logout_url}}">
-				<button class="btn btn-primary">Logout</button>
-			</a>
-			{%endif%}
-		</p>
+			<p>Please logout of this account and log back in with your ShareThis.com account</p>
+			<p>
+				<a href="{{logout_url}}">
+					<button class="btn btn-primary">Logout</button>
+				</a>
+			</p>
+			{%else%}
+			<p>Please log in with a ShareThis.com Google Account.</p>
+			<p>
+				<a href="{{login_url}}">
+					<button class="btn btn-primary">Login</button>
+				</a> 
+			</p>
+			{% endif %}
+			
 	  </div>
 	</div>
 
