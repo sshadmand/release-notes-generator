@@ -1,67 +1,18 @@
+{% extends 'base.html' %}
 
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="">
-    <meta name="author" content="">
-    <link rel="shortcut icon" href="/static/images/ico/favicon.ico">
+{%block page-style %}
+<style>
+  .dropdown-menu.post-menu{
+    margin-left:75px;
+  }
+  .dropdown-menu.search-menu{
+    margin-left:-145px;
+  }
+</style>
+{% endblock %}
 
-    <title>Jumbotron Template for Bootstrap</title>
-
-    <!-- Global -->
-    <link href="/static/bootstrap/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="//code.jquery.com/ui/1.10.4/themes/smoothness/jquery-ui.css">
-    <link href="/static/css/global.css" rel="stylesheet">
-
-    <!-- Just for debugging purposes. Don't actually copy this line! -->
-    <!--[if lt IE 9]><script src="../../assets/js/ie8-responsive-file-warning.js"></script><![endif]-->
-
-    <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
-    <!--[if lt IE 9]>
-      <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
-      <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
-    <![endif]-->
-
-
-  </head>
-
-  <body>
-
-	<div class="ajax-indicator">
-		<div class="loading">
-  			<span class="glyphicon glyphicon-refresh"></span> Loading
-  		</div>
-  		<div class="complete">
-  			<span class="glyphicon glyphicon-ok"></span> Complete
-  		</div>
-  		<div class="error">
-  			<span class="glyphicon glyphicon-ban-circle"></span> Error!
-  		</div>
-  	</div>
-
-    <div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
-      <div class="container">
-        <div class="navbar-header">
-          <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
-            <span class="sr-only">Toggle navigation</span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-          </button>
-
-          <a class="navbar-brand" href="#">
-          	<span><img src="http://www.jdsmitproductions.co.nz/img/sharethis.png" style="width:21px;width: 21px;
-vertical-align: top;" /></span>
-          	Release Notes Generator
-          </a>
-        </div>
-      </div>
-    </div>
-
-
+    
+{% block content %}
 
     <!-- Main jumbotron for a primary marketing message or call to action -->
     <div class="jumbotron">
@@ -84,7 +35,7 @@ vertical-align: top;" /></span>
 			        <button class="btn btn-default dropdown-toggle" data-toggle="dropdown" type="button">
 			        	<span class="caret"></span>
 			        </button>
-			        <ul class="dropdown-menu">
+			        <ul class="dropdown-menu search-menu">
 			          <li><a href="javascript://" onclick="populate_sz_api();">Socialize API Accepted Tickets</a></li>
 			          <li><a href="javascript://" onclick="populate_sz_web();">Socialize Web Accepted Tickets</a></li>
 			          <li class="divider"></li>
@@ -125,10 +76,22 @@ vertical-align: top;" /></span>
 
 
 
-			<form role="form" class="form-inline" onsubmit="postIssuesToTwitterAndGetsat(this);return false;">
+			<form role="form" class="form-inline" onsubmit="return false;">
 				<div class="form-group">
-					<input type="text" class="form-control" placeholder="Version ex: LAPI v2.2" id="release_name">
-					<button type="submit" class="btn btn-primary">Update Twitter Status w/ notes on GetSat <span class="glyphicon glyphicon-send"></span></button>
+					<span class="input-group-btn dropup">
+          
+            <input type="text" class="form-control" placeholder="Version ex: LAPI v2.2" id="release_name">
+            <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" >
+                Push Update
+                <span class="glyphicon glyphicon-send"></span>
+            </button>
+            <ul class="dropdown-menu post-menu">
+              <li><a href="javascript://" onclick="postIssuesToTwitterAndGetsat(this);">As @SocializeStatus Tweet</a></li>
+              <li><a href="javascript://" onclick="postIssuesToEmail(this);">As Email</a></li>
+              <li class="divider"></li>
+              <li><a href="mailto:sean%40sharethis.com?subject=new%20account%20please%20JIRA-RNG">Add a New Post Method</a></li>
+            </ul>
+          </span>
 				</div>
 			</form>
 		</div><!-- post conatiner -->
@@ -136,22 +99,4 @@ vertical-align: top;" /></span>
 	</div><!-- container -->
 
 
-    <!-- Bootstrap core JavaScript
-    ================================================== -->
-    <!-- Placed at the end of the document so the pages load faster -->
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
-    <script src="//code.jquery.com/ui/1.10.4/jquery-ui.js"></script>
-    <script src="/static/bootstrap/js/bootstrap.min.js"></script>
-    <script src="/static/js/global_ajax.js"></script>
-    <script src="/static/js/search_jira.js"></script>
-    <script src="/static/js/post_issues.js"></script>
-    <script>
-
-		$( document ).ready(function() {
-		    console.log( "ready!" );
-		});
-
-
-    </script>
-  </body>
-</html>
+{% endblock %}

@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{%block page-style %}
+<style>
+  .login{
+    margin-top:40px;
+  }
+  p{
+  	font-size: 1.2em;
+  }
+</style>
+{% endblock %}
+
+
+{% block content %}
+	
+	
+<div class="container login col-md-6 col-md-offset-3">
+
+	<div class="panel panel-default">
+	  <div class="panel-heading">
+	    <h3 class="panel-title">Authentication</h3>
+	  </div>
+	  <div class="panel-body">
+	    
+			{% if user %}
+			<p>You are currently logged in as {{user.email}}. </p>
+			{% endif %}
+			<p>You must be signed in as a ShareThis.com user to use this site.</p>
+		
+		<p>
+			<a href="{{login_url}}">
+				<button class="btn btn-primary">Login</button>
+			</a> 
+			{% if user %}
+			<a href="{{logout_url}}">
+				<button class="btn btn-primary">Logout</button>
+			</a>
+			{%endif%}
+		</p>
+	  </div>
+	</div>
+
+</div>
+{% endblock %}

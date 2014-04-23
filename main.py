@@ -15,7 +15,7 @@ from releasenotes.getsat_connect import *
 from releasenotes.twitter_connect import *
 import logging
 
-
+from google.appengine.api import users
 
 class Index(webapp.RequestHandler):
 
@@ -23,12 +23,44 @@ class Index(webapp.RequestHandler):
         pass
         
     def get(self):
-        path = os.path.join(os.path.dirname(__file__), 'templates/index.html')
+
+        user = users.get_current_user()
+
+        if user and "@sharethis.com" in user.email():
+            logging.info( "LOGGED IN AS: %s" %  user.email() ) 
+            path = os.path.join(os.path.dirname(__file__), 'templates/index.html')
+            self.response.out.write(template.render(path, 
+                {
+                    "logout_url": users.create_logout_url("/login"),
+                    "user": user.email()
+                }
+            ))
+        else:
+            logging.info(  "NOT LOGGED IN" )
+            self.redirect("/login")
+
+class Login(webapp.RequestHandler):
+
+    def post(self):
+        pass
+        
+    def get(self):
+
+        user = users.get_current_user()
+
+        login_url = users.create_login_url('/')
+        logout_url = users.create_logout_url("/login")
+        
+        path = os.path.join(os.path.dirname(__file__), 'templates/login.html')
         self.response.out.write(template.render(path, 
             {
-
+                "user": user,
+                "page": "login",
+                "logout_url": logout_url,
+                "login_url": login_url,
             }
         ))
+         
 
 
 class GetIssues(webapp.RequestHandler):
@@ -75,6 +107,7 @@ class PostIssuesToTwitterAndGetSat(webapp.RequestHandler):
 
 app = webapp.WSGIApplication([
                                         ('/', Index),
+                                        ('/login', Login),
                                         ('/get_issues', GetIssues),
                                         ('/post_issues_to_twitter_and_getsat', PostIssuesToTwitterAndGetSat),
 
